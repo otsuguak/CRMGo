@@ -1683,45 +1683,53 @@ window.compartirJitsiCorreo = () => {
 };
 
 // ==========================================
-// NUEVO MOTOR SAAS: CONEXIÓN A VERCEL
+// NUEVO MOTOR SAAS: CONEXIÓN A VERCEL (CORREGIDO)
 // ==========================================
 async function verificarPlanSaaS() {
     try {
-        // Le preguntamos a nuestro nuevo servidor en Vercel
+        console.log("Preguntándole a Vercel qué plan tiene este dominio...");
         const respuesta = await fetch('/api/login');
         const infoSaaS = await respuesta.json();
 
-        console.log("Servidor dice:", infoSaaS.datos);
+        // ¡AQUÍ ESTABA EL ERROR! Ahora leemos "infoSaaS.plan" correctamente.
+        // Si por alguna razón falla, le ponemos "START" para proteger tu negocio.
+        const planAsignado = infoSaaS.plan || "START"; 
 
-        // Guardamos el plan en memoria
-        sessionStorage.setItem('planActual', infoSaaS.datos.plan);
-        
-        // Ejecutamos la función que esconde las cosas
-        aplicarFeatureFlag(infoSaaS.datos.plan);
+        console.log("✅ Vercel respondió. El plan asignado es:", planAsignado);
+
+        // Guardamos el plan y apagamos los botones
+        sessionStorage.setItem('planActual', planAsignado);
+        aplicarFeatureFlag(planAsignado);
 
     } catch (error) {
-        console.error("Error conectando con el servidor SaaS", error);
+        console.error("❌ Error de red conectando con Vercel:", error);
+        aplicarFeatureFlag("START"); // Si no hay internet o Vercel falla, escondemos todo por seguridad
     }
 }
 
 function aplicarFeatureFlag(plan) {
-    // Aquí definimos qué ve cada plan (Fácil de cambiar)
     const permisos = {
         "START": { mercado: false, reservas: false, salas: false },
         "PRO":   { mercado: false, reservas: true,  salas: true },
         "MASTER":{ mercado: true,  reservas: true,  salas: true }
     };
 
-    const misPermisos = permisos[plan];
+    // Si el plan no existe en la lista, usamos START
+    const misPermisos = permisos[plan] || permisos["START"];
+    console.log("Aplicando permisos:", misPermisos);
 
-    // Ocultamos los módulos si el plan dice "false"
-    // NOTA: Asegúrate de ponerle id="menu-mercado" a tu botón del menú en el crm.html
+    // Capturamos tu botón del HTML
     const menuMercado = document.getElementById('menu-mercado');
-    if (menuMercado && misPermisos.mercado === false) {
-        menuMercado.classList.add('hidden');
+    
+    // Método infalible: Usar style.display = 'none' en lugar de clases de Tailwind
+    if (menuMercado) {
+        if (misPermisos.mercado === false) {
+            menuMercado.style.display = 'none'; // Desaparece por completo
+            console.log("Botón de mercado oculto exitosamente.");
+        } else {
+            menuMercado.style.display = 'flex'; // Vuelve a aparecer normal
+        }
     }
-
-    // (Haremos lo mismo para reservas y salas en el siguiente paso)
 }
 
 // Ejecutar apenas cargue la página
