@@ -1708,26 +1708,19 @@ async function verificarPlanSaaS() {
 }
 
 function aplicarFeatureFlag(plan) {
-    const permisos = {
-        "START": { mercado: false, reservas: false, salas: false },
-        "PRO":   { mercado: false, reservas: true,  salas: true },
-        "MASTER":{ mercado: true,  reservas: true,  salas: true }
-    };
-
-    // Si el plan no existe en la lista, usamos START
-    const misPermisos = permisos[plan] || permisos["START"];
-    console.log("Aplicando permisos:", misPermisos);
+    // Buscamos el plan en tu nuevo archivo config.js (Si no existe, usamos START)
+    const misPermisos = CONFIG_SAAS[plan] || CONFIG_SAAS["START"];
+    console.log("Aplicando permisos desde config.js:", misPermisos);
 
     // Capturamos tu botón del HTML
     const menuMercado = document.getElementById('menu-mercado');
     
-    // Método infalible: Usar style.display = 'none' en lugar de clases de Tailwind
+    // Método infalible para desaparecerlo
     if (menuMercado) {
         if (misPermisos.mercado === false) {
-            menuMercado.style.display = 'none'; // Desaparece por completo
-            console.log("Botón de mercado oculto exitosamente.");
+            menuMercado.style.display = 'none'; 
         } else {
-            menuMercado.style.display = 'flex'; // Vuelve a aparecer normal
+            menuMercado.style.display = 'flex'; 
         }
     }
 }
