@@ -58,53 +58,62 @@ async function cargarConfiguracionPortal() {
     }
 }
 
-// Función que va a Supabase, trae las 8 últimas y dibuja las tarjetas
+// Función Segura que va a Vercel, trae las 8 últimas y dibuja tus tarjetas
 async function cargarNoticiasPublicas() {
     const contenedor = document.getElementById('contenedor-noticias');
     if (!contenedor) return;
 
-    const { data, error } = await supabase
-        .from('noticias')
-        .select('*')
-        .order('fecha', { ascending: false })
-        .limit(8);
+    try {
+        // 1. VAMOS A VERCEL EN LUGAR DE SUPABASE (Cero llaves expuestas)
+        const respuesta = await fetch('/api/noticias');
+        const resultado = await respuesta.json();
 
-    if (error) {
-        console.error("Error cargando noticias:", error);
+        // Si Vercel nos dice que hubo un error
+        if (!resultado.exito) {
+            console.error("Error desde Vercel:", resultado.mensaje);
+            contenedor.innerHTML = '<p class="text-red-400 col-span-full text-center py-8">No se pudieron cargar las noticias.</p>';
+            return;
+        }
+
+        // Sacamos la data limpia
+        const data = resultado.datos;
+        
+        noticiasGlobales = data;
+        contenedor.innerHTML = ''; // Limpiamos el letrero de "Cargando..."
+
+        if (data.length === 0) {
+            contenedor.innerHTML = '<p class="text-slate-400 col-span-full text-center py-8">No hay avisos recientes en la comunidad.</p>';
+            return;
+        }
+
+        // ==========================================
+        // 2. TU DISEÑO MAGISTRAL (SE QUEDA INTACTO)
+        // ==========================================
+        data.forEach((noti, index) => {
+            const colores = {
+                'Urgente': { bg: 'bg-red-500', bgLight: 'bg-red-500/20', text: 'text-red-400', border: 'hover:border-red-500' },
+                'Alerta': { bg: 'bg-orange-500', bgLight: 'bg-orange-500/20', text: 'text-orange-400', border: 'hover:border-orange-500' },
+                'Exclusivo': { bg: 'bg-purple-500', bgLight: 'bg-purple-500/20', text: 'text-purple-400', border: 'hover:border-purple-500' },
+                'Informativo': { bg: 'bg-blue-500', bgLight: 'bg-blue-500/20', text: 'text-blue-400', border: 'hover:border-blue-500' }
+            };
+            const c = colores[noti.tipo] || colores['Informativo'];
+
+            const tarjeta = `
+                <div onclick="abrirNoticiaDetalle(${index})" class="glass-card p-6 rounded-2xl hover:-translate-y-1 transition-transform cursor-pointer relative overflow-hidden group border-slate-700 ${c.border}">
+                    <div class="absolute top-0 left-0 w-1 h-full ${c.bg}"></div>
+                    <span class="px-2 py-1 ${c.bgLight} ${c.text} text-xs font-bold rounded mb-3 inline-block">${noti.tipo}</span>
+                    <h3 class="text-lg font-bold mb-2 text-slate-100">${noti.titulo}</h3>
+                    <p class="text-slate-400 text-sm mb-4 line-clamp-2">${noti.resumen}</p>
+                    <span class="text-xs ${c.text} font-bold group-hover:underline">Leer más <i class="fa-solid fa-arrow-right ml-1"></i></span>
+                </div>
+            `;
+            contenedor.innerHTML += tarjeta;
+        });
+
+    } catch (error) {
+        console.error("Error de red conectando con Vercel:", error);
         contenedor.innerHTML = '<p class="text-red-400 col-span-full text-center py-8">No se pudieron cargar las noticias.</p>';
-        return;
     }
-
-    noticiasGlobales = data;
-    contenedor.innerHTML = ''; // Limpiamos el letrero de "Cargando..."
-
-    if (data.length === 0) {
-        contenedor.innerHTML = '<p class="text-slate-400 col-span-full text-center py-8">No hay avisos recientes en la comunidad.</p>';
-        return;
-    }
-
-    // Dibujamos cada tarjeta que encuentre en la Base de Datos
-    data.forEach((noti, index) => {
-        // Asignamos el color dependiendo del tipo de noticia
-        const colores = {
-            'Urgente': { bg: 'bg-red-500', bgLight: 'bg-red-500/20', text: 'text-red-400', border: 'hover:border-red-500' },
-            'Alerta': { bg: 'bg-orange-500', bgLight: 'bg-orange-500/20', text: 'text-orange-400', border: 'hover:border-orange-500' },
-            'Exclusivo': { bg: 'bg-purple-500', bgLight: 'bg-purple-500/20', text: 'text-purple-400', border: 'hover:border-purple-500' },
-            'Informativo': { bg: 'bg-blue-500', bgLight: 'bg-blue-500/20', text: 'text-blue-400', border: 'hover:border-blue-500' }
-        };
-        const c = colores[noti.tipo] || colores['Informativo'];
-
-        const tarjeta = `
-            <div onclick="abrirNoticiaDetalle(${index})" class="glass-card p-6 rounded-2xl hover:-translate-y-1 transition-transform cursor-pointer relative overflow-hidden group border-slate-700 ${c.border}">
-                <div class="absolute top-0 left-0 w-1 h-full ${c.bg}"></div>
-                <span class="px-2 py-1 ${c.bgLight} ${c.text} text-xs font-bold rounded mb-3 inline-block">${noti.tipo}</span>
-                <h3 class="text-lg font-bold mb-2 text-slate-100">${noti.titulo}</h3>
-                <p class="text-slate-400 text-sm mb-4 line-clamp-2">${noti.resumen}</p>
-                <span class="text-xs ${c.text} font-bold group-hover:underline">Leer más <i class="fa-solid fa-arrow-right ml-1"></i></span>
-            </div>
-        `;
-        contenedor.innerHTML += tarjeta;
-    });
 }
 
 // ==========================================
