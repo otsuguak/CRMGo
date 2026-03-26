@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LumenGroup | Portal Comunitario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; overflow-x: hidden; font-family: 'Inter', sans-serif; }
+        .text-gradient { background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .bg-glow-1 { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(15,23,42,0) 70%); top: -100px; left: -100px; z-index: -1; }
+        .bg-glow-2 { position: absolute; width: 500px; height: 500px; background: radial-gradient(circle, rgba(167,139,250,0.1) 0%, rgba(15,23,42,0) 70%); top: 40%; right: -100px; z-index: -1; }
+        
+        .glass-card { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="antialiased relative selection:bg-blue-500 selection:text-white">
+    
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+
+    <nav class="container mx-auto px-6 py-6 flex justify-between items-center relative z-10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <i class="fa-solid fa-building text-white"></i>
+            </div>
+            <div class="text-2xl font-bold tracking-tighter">Lumen<span class="text-gradient">Group</span></div>
+        </div>
+        <a href="crm.html" class="glass-card hover:bg-slate-800/80 text-white font-semibold py-2.5 px-6 rounded-full transition-all duration-300 border border-slate-600 hover:border-blue-400">
+            Mi Cuenta CRM <i class="fa-solid fa-user-shield ml-2 text-sm"></i>
+        </a>
+    </nav>
+
+    <main class="container mx-auto px-6 pt-12 pb-16 text-center relative z-10 reveal">
+        <div class="inline-flex items-center gap-2 py-1.5 px-4 rounded-full glass-card text-sm text-blue-300 font-medium mb-8">
+            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Portal Residente Activo
+        </div>
+        <h1 id="hero-titulo" class="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
+            Cargando...
+        </h1>
+        <p id="hero-desc" class="text-lg text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+            ...
+        </p>
+    </main>
+
+    <section class="container mx-auto px-6 py-8 border-t border-slate-800/50 reveal">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-white mb-2"><i class="fa-solid fa-bullhorn text-blue-500 mr-3"></i>Cartelera Digital</h2>
+            <p class="text-slate-400">Últimos avisos de la administración.</p>
+        </div>
+        <div id="contenedor-noticias" class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <p class="text-slate-400 col-span-full text-center animate-pulse py-8">Buscando noticias en el servidor...</p>
+        </div>
+    </section>
+
+    <section class="container mx-auto px-6 py-12 reveal">
+        <h2 class="text-3xl font-bold text-white mb-2"><i class="fa-solid fa-tree-city text-purple-500 mr-3"></i>Zonas Comunes</h2>
+        <p class="text-slate-400 mb-8">Haz clic para solicitar tu reserva.</p>
+        
+        <div id="contenedor-zonas" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <p class="text-slate-400 col-span-full text-center py-4">Cargando zonas comunes...</p>
+        </div>
+    </section>
+
+    <section class="container mx-auto px-6 py-12 mb-12 reveal">
+        <div class="flex justify-between items-end mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-white mb-2"><i class="fa-solid fa-house-flag text-green-500 mr-3"></i>Inmuebles Destacados</h2>
+                <p class="text-slate-400 text-sm">Propiedades seleccionadas por la administración.</p>
+            </div>
+            <button onclick="abrirModal('modal-inmuebles')" class="hidden md:block bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors border border-slate-600">
+                Ver Catálogo Completo
+            </button>
+        </div>
+                
+        <div id="contenedor-inmuebles-destacados" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <p class="text-slate-400 col-span-full text-center py-4">Buscando inmuebles destacados...</p>
+        </div>
+        
+        <button onclick="abrirModal('modal-inmuebles')" class="md:hidden w-full bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold py-3 px-4 rounded-lg transition-colors border border-slate-600">
+            Ver Catálogo Completo
+        </button>
+    </section>
+
+    <div id="modal-noticia" class="hidden fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+    </div>
+
+    <div id="modal-reserva" class="hidden fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="glass-card bg-slate-800/90 rounded-2xl w-full max-w-md border border-slate-600 shadow-2xl p-6">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
+                <h3 class="text-xl font-bold text-white"><i class="fa-regular fa-calendar-check text-purple-400 mr-2"></i>Solicitar Reserva</h3>
+                <button onclick="cerrarModal('modal-reserva')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs text-slate-400 font-bold mb-1 block">Zona a reservar</label>
+                    <select id="res-zona" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:border-purple-500 outline-none">
+                        <option value="">Cargando zonas...</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs text-slate-400 font-bold mb-1 block">Fecha</label>
+                        <input type="date" id="res-fecha" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:border-purple-500 outline-none" style="color-scheme: dark;">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 font-bold mb-1 block">Apto / Casa</label>
+                        <input type="text" id="res-apto" placeholder="Ej: T2-401" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:border-purple-500 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 font-bold mb-1 block">Correo de contacto</label>
+                    <input type="email" id="res-email" placeholder="correo@ejemplo.com" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:border-purple-500 outline-none">
+                </div>
+                <button onclick="enviarReserva()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-colors mt-4 shadow-[0_0_15px_rgba(168,85,247,0.4)]">
+                    Enviar Solicitud
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-inmuebles" class="hidden fixed inset-0 bg-slate-900/95 z-50 flex flex-col p-4 backdrop-blur-md transition-opacity">
+        <div class="container mx-auto max-w-6xl h-full flex flex-col">
+            <div class="flex justify-between items-center mb-6 pt-4 shrink-0">
+                <h2 class="text-3xl font-bold text-white"><i class="fa-solid fa-city text-green-500 mr-3"></i>Catálogo Inmobiliario</h2>
+                <button onclick="cerrarModal('modal-inmuebles')" class="bg-slate-800 hover:bg-red-500 text-white w-10 h-10 rounded-full transition-colors flex items-center justify-center border border-slate-600"><i class="fa-solid fa-times"></i></button>
+            </div>
+            
+            <div class="bg-slate-800/80 p-3 rounded-xl mb-6 flex gap-3 shrink-0 border border-slate-700 shadow-lg">
+                <i class="fas fa-search text-slate-400 ml-3 mt-3"></i>
+                <input type="text" id="input-buscador-inm" placeholder="Buscar por torre, precio, tipo (venta/arriendo)..." class="flex-1 bg-transparent border-none text-white text-sm outline-none px-2 py-2">
+            </div>
+
+            <div class="flex-1 overflow-y-auto no-scrollbar pb-10">
+                <div id="contenedor-catalogo-completo" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-detalle-inmueble" class="hidden fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="glass-card bg-slate-800/95 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col md:flex-row overflow-hidden border border-slate-600 shadow-2xl relative">
+            <button onclick="cerrarModal('modal-detalle-inmueble')" class="absolute top-4 right-4 bg-black/50 hover:bg-red-500 text-white w-10 h-10 rounded-full transition-colors flex items-center justify-center z-10"><i class="fa-solid fa-times"></i></button>
+            
+            <div class="md:w-1/2 bg-black relative flex items-center justify-center h-64 md:h-auto">
+                <img id="det-inm-foto-principal" src="" class="w-full h-full object-contain max-h-[60vh]">
+                <div id="det-inm-miniaturas" class="absolute bottom-4 flex gap-2 overflow-x-auto px-4 w-full justify-center no-scrollbar"></div>
+            </div>
+
+            <div class="md:w-1/2 p-6 md:p-8 flex flex-col overflow-y-auto no-scrollbar">
+                <span id="det-inm-tipo" class="px-3 py-1 text-xs font-bold uppercase rounded block w-max mb-3"></span>
+                <h2 id="det-inm-titulo" class="text-3xl font-bold text-white mb-2"></h2>
+                <p id="det-inm-precio" class="text-2xl font-bold text-green-400 mb-6"></p>
+
+                <div class="grid grid-cols-4 gap-4 mb-6 border-y border-slate-700 py-4">
+                    <div class="text-center"><i class="fa-solid fa-bed text-slate-400 text-xl block mb-1"></i><span id="det-inm-hab" class="text-white font-bold"></span><p class="text-[10px] text-slate-500 uppercase">Hab.</p></div>
+                    <div class="text-center"><i class="fa-solid fa-bath text-slate-400 text-xl block mb-1"></i><span id="det-inm-banos" class="text-white font-bold"></span><p class="text-[10px] text-slate-500 uppercase">Baños</p></div>
+                    <div class="text-center"><i class="fa-solid fa-ruler-combined text-slate-400 text-xl block mb-1"></i><span id="det-inm-area" class="text-white font-bold"></span><p class="text-[10px] text-slate-500 uppercase">Mts²</p></div>
+                    <div class="text-center"><i class="fa-solid fa-car text-slate-400 text-xl block mb-1"></i><span id="det-inm-parq" class="text-white font-bold"></span><p class="text-[10px] text-slate-500 uppercase">Parq.</p></div>
+                </div>
+
+                <div class="flex-1 mb-6">
+                    <h4 class="text-slate-400 text-sm font-bold mb-2 uppercase">Descripción</h4>
+                    <p id="det-inm-desc" class="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap"></p>
+                </div>
+
+                <a id="det-inm-whatsapp" href="#" target="_blank" class="w-full bg-[#25D366] hover:bg-[#1ebd5a] text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-green-900/50 flex items-center justify-center text-lg mt-auto">
+                    <i class="fa-brands fa-whatsapp text-2xl mr-3"></i> Contactar al Propietario
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="module" src="pagina.js"></script>
+</body>
+</html>
