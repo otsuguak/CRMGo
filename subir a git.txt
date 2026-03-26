@@ -1,0 +1,32 @@
+1. Encendemos el motor en tu carpeta:
+
+Bash
+git init
+2. Le decimos a qué dirección de GitHub tiene que enviar la caja:
+(Borra lo que dice URL_DE_TU_GITHUB y pega la dirección que copiaste, sin los corchetes)
+
+Bash
+git remote add origin URL_DE_TU_GITHUB
+3. Le ponemos el nombre oficial a la ruta (main):
+
+Bash
+git branch -M main
+📦 Ahora sí, el combo de envío (El que te enseñé antes)
+Ya que el motor está encendido y conectado, mandamos la mudanza completa:
+
+4. Empacamos todo:
+
+Bash
+git add .
+5. Etiquetamos la caja:
+
+Bash
+git commit -m "Subida limpia y definitiva desde consola"
+6. Disparamos a la nube (¡OJO AQUÍ!):
+Como GitHub tiene archivos viejos de tus subidas manuales, le vamos a mandar un comando "agresivo" (--force) para decirle: "Borra lo que tengas allá y pon exactamente lo que te estoy mandando desde mi compu".
+
+Bash
+git push -u origin main --force
+A partir de hoy, nunca más vas a tener que usar los pasos 1, 2 y 3. Para tus próximos cambios, solo usarás el combo rápido (add, commit, push).
+
+Pon esos comandos y cuéntame si el último (git push) empezó a cargar un porcentaje hasta llegar al 100%. ¡Si es así, coronamos!

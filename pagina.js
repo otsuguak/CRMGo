@@ -1,15 +1,35 @@
-// Importamos Supabase (Igual que en el CRM)
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
-
-const supabaseUrl = 'https://rqjfaztnaktizrgllhna.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxamZhenRuYWt0aXpyZ2xsaG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzk1NjksImV4cCI6MjA4NzcxNTU2OX0.cb6LSWq5YZ7BKRdBx2VoeD-m1gUonfpU_MJemaTSB3U';
-
-// ¡LA LÍNEA SALVAVIDAS!
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Guardamos las noticias en memoria para poder abrirlas en el modal
+// --- 1. VARIABLES GLOBALES (Cero llaves expuestas, 100% seguro) ---
 let noticiasGlobales = [];
-let inmueblesGlobales = []; // <-- ESTA ES LA QUE TE FALTABA
+let inmueblesGlobales = [];
+
+// --- 2. EL MOTOR DE ARRANQUE SEGURO ---
+// Esto se ejecuta apenas el visitante abre la página web
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // A. Preguntamos a Vercel a qué conjunto pertenece este link
+        const respConfig = await fetch('/api/login');
+        const infoSaaS = await respConfig.json();
+        
+        const idConjunto = infoSaaS.copropiedad_id;
+
+        if (!idConjunto) {
+            console.warn("⚠️ Dominio no registrado. El portal no cargará datos.");
+            return; // Detenemos todo si es un intruso
+        }
+
+        // B. Guardamos el carnet en el bolsillo del visitante (sessionStorage)
+        // Así las funciones de noticias e inmuebles lo pueden usar
+        sessionStorage.setItem('copropiedad_id_publico', idConjunto);
+        console.log("🔒 Carnet de visitante listo:", idConjunto);
+
+        // C. Ahora sí, con el carnet en mano, traemos la información
+        await cargarNoticiasPublicas();
+        await cargarInmueblesPublicos();
+
+    } catch (error) {
+        console.error("Error iniciando el portal público:", error);
+    }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Portal Comunitario iniciado. Conectando a Supabase...");
@@ -285,24 +305,45 @@ window.abrirModalReservaConZona = (nombreZona) => {
 // ==========================================
 
 async function cargarInmueblesPublicos() {
-    const { data, error } = await supabase.from('inmuebles').select('*').order('id', { ascending: false });
-    
-    if (error || !data) {
-        console.error(error);
-        return;
+    try {
+        // --- INICIO SEGURIDAD INMUEBLES ---
+        // 1. Buscamos el carnet que guardamos cuando cargamos la página
+        const idConjunto = sessionStorage.getItem('copropiedad_id_publico');
+
+        // Si no hay carnet, no podemos buscar inmuebles
+        if (!idConjunto) {
+            console.warn("⚠️ No se encontró la copropiedad. Los inmuebles no cargarán.");
+            return;
+        }
+
+        // 2. Usamos el cajero seguro de Vercel
+        const rutaSeguraInmuebles = `/api/inmuebles?copropiedad_id=${idConjunto}`;
+        const respuesta = await fetch(rutaSeguraInmuebles);
+        const resultado = await respuesta.json();
+
+        if (!resultado.exito || !resultado.datos) {
+            console.error("Error trayendo inmuebles de Vercel:", resultado.mensaje);
+            return;
+        }
+
+        const data = resultado.datos;
+        // --- FIN SEGURIDAD INMUEBLES ---
+
+        inmueblesGlobales = data;
+
+        // 1. Filtrar los Destacados para la pantalla principal (máximo 8)
+        const destacados = data.filter(inm => inm.destacado === true).slice(0, 8);
+        
+        // Si no hay destacados, mostramos los últimos 8 que se subieron
+        const paraMostrarEnInicio = destacados.length > 0 ? destacados : data.slice(0, 8);
+        renderizarTarjetasInmuebles(paraMostrarEnInicio, 'contenedor-inmuebles-destacados');
+
+        // 2. Llenar el catálogo completo
+        renderizarTarjetasInmuebles(data, 'contenedor-catalogo-completo');
+
+    } catch (error) {
+        console.error("Error de red conectando con Vercel para inmuebles:", error);
     }
-
-    inmueblesGlobales = data;
-
-    // 1. Filtrar los Destacados para la pantalla principal (máximo 8)
-    const destacados = data.filter(inm => inm.destacado === true).slice(0, 8);
-    
-    // Si no hay destacados, mostramos los últimos 8 que se subieron
-    const paraMostrarEnInicio = destacados.length > 0 ? destacados : data.slice(0, 8);
-    renderizarTarjetasInmuebles(paraMostrarEnInicio, 'contenedor-inmuebles-destacados');
-
-    // 2. Llenar el catálogo completo
-    renderizarTarjetasInmuebles(data, 'contenedor-catalogo-completo');
 }
 
 // Función que dibuja las tarjetas donde se lo pidamos
