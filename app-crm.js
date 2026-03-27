@@ -284,19 +284,31 @@ window.registrarUsuario = async () => {
     const rol = document.getElementById('reg-rol').value;
     const inmueble = document.getElementById('reg-inmueble').value;
 
+    // --- CAMBIO 1: Sacamos el carnet del conjunto que Vercel guardó ---
+    const idConjunto = sessionStorage.getItem('copropiedad_id');
+
     if (!email || !pass || !nombre) return Swal.fire('Campos vacíos', 'Completa todo el formulario', 'warning');
+
+    // --- CAMBIO 2: Escudo de seguridad ---
+    // Si alguien intenta registrarse sin estar en un dominio válido, lo bloqueamos
+    if (!idConjunto) {
+        return Swal.fire('Error de Seguridad', 'No se detectó a qué conjunto pertenece este registro. Por favor recarga la página.', 'error');
+    }
 
     mostrarCargando();
 
-    // NUEVO: Validación estricta usando el Teléfono Rojo (RPC) para evitar "Usuarios Fantasmas"
+    // Validación estricta usando el Teléfono Rojo (RPC) para evitar "Usuarios Fantasmas"
     if (rol === 'agente') {
-        const { data: adminExiste, error: rpcError } = await supabase.rpc('check_admin_exists');
+        // --- CAMBIO 3: Le pasamos el carnet a Supabase para que busque solo en este conjunto ---
+        const { data: adminExiste, error: rpcError } = await supabase.rpc('check_admin_exists', {
+            p_copropiedad_id: idConjunto
+        });
         
         if (adminExiste) {
             ocultarCargando();
             return Swal.fire({
                 title: 'Acceso Denegado', 
-                text: 'Ya existe un administrador en el sistema. Por favor, selecciona el rol de Residente.', 
+                text: 'Ya existe un administrador en tu conjunto. Por favor, selecciona el rol de Residente.', 
                 icon: 'warning',
                 confirmButtonColor: '#f59e0b'
             });
@@ -315,20 +327,25 @@ window.registrarUsuario = async () => {
              const { error: dbError } = await supabase
                 .from('usuarios')
                 .insert([
-                    { id: authData.user.id, email: email, nombre: nombre, rol: rol, inmueble: inmueble }
+                    { 
+                        id: authData.user.id, 
+                        email: email, 
+                        nombre: nombre, 
+                        rol: rol, 
+                        inmueble: inmueble,
+                        copropiedad_id: idConjunto // --- CAMBIO 4: Amarramos el perfil al conjunto en la BD ---
+                    }
                 ]);
             if (dbError) throw dbError;
         }
 
-        // MOVIDO: La alerta de éxito solo se muestra si TODO salió bien (tanto auth como db)
-        Swal.fire('¡Éxito!', 'Usuario creado. Revisa tu correo si pedimos confirmación (depende de configuración).', 'success');
+        Swal.fire('¡Éxito!', 'Usuario creado. Revisa tu correo si pedimos confirmación.', 'success');
         mostrarLogin();
 
     } catch (error) {
         console.error("Error original de Supabase:", error);
         let mensajeEspanol = "Ocurrió un error inesperado al registrar el usuario.";
 
-        // Traducimos los errores al español, incluyendo el mensaje del Trigger
         if (error.message && error.message.includes("Password should be at least")) {
             mensajeEspanol = "La contraseña es muy débil. Debe tener al menos 8 caracteres.";
         } else if (error.message && (error.message.includes("User already registered") || error.message.includes("already exists"))) {
@@ -341,7 +358,6 @@ window.registrarUsuario = async () => {
             mensajeEspanol = error.message; 
         }
 
-        // CORREGIDO: Mostramos la alerta roja de ERROR, no la verde de éxito
         Swal.fire({
             title: 'Error de Registro',
             text: mensajeEspanol,
