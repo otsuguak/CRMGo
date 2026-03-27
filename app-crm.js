@@ -1741,3 +1741,221 @@ function aplicarFeatureFlag(plan) {
 document.addEventListener('DOMContentLoaded', () => {
     verificarPlanSaaS();
 });
+
+// ==========================================
+// MÓDULO: DOCUMENTOS Y MANUALES (ADMIN)
+// ==========================================
+
+window.abrirModalDocumentos = () => {
+    document.getElementById('modal-admin-documentos').classList.remove('hidden');
+    cargarDocumentosAdmin(); // Carga la tabla apenas se abre
+};
+
+window.cargarDocumentosAdmin = async () => {
+    const idConjunto = sessionStorage.getItem('copropiedad_id');
+    const tbody = document.getElementById('tabla-documentos-admin');
+    if (!idConjunto || !tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="2" class="text-center py-4 text-slate-400">Cargando...</td></tr>';
+
+    try {
+        const { data, error } = await supabase
+            .from('documentos')
+            .select('*')
+            .eq('copropiedad_id', idConjunto)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        tbody.innerHTML = '';
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2" class="text-center py-4 text-slate-400">No hay documentos subidos</td></tr>';
+            return;
+        }
+
+        data.forEach(doc => {
+            tbody.innerHTML += `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-4 py-3">
+                        <p class="font-bold text-slate-800 text-sm">${doc.titulo}</p>
+                        <p class="text-xs text-slate-400">${doc.categoria}</p>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <a href="${doc.archivo_url}" target="_blank" class="text-blue-500 hover:text-blue-700 mx-2" title="Ver archivo"><i class="fas fa-eye"></i></a>
+                        <button onclick="eliminarRegistro('documentos', '${doc.id}', cargarDocumentosAdmin)" class="text-red-500 hover:text-red-700 mx-2" title="Eliminar"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+    } catch (error) {
+        console.error("Error cargando documentos:", error);
+    }
+};
+
+window.guardarDocumento = async () => {
+    const idConjunto = sessionStorage.getItem('copropiedad_id');
+    const titulo = document.getElementById('doc-titulo').value.trim();
+    const desc = document.getElementById('doc-desc').value.trim();
+    const categoria = document.getElementById('doc-categoria').value;
+    const archivoInput = document.getElementById('doc-archivo');
+
+    if (!titulo || archivoInput.files.length === 0) {
+        return Swal.fire('Faltan datos', 'Ponle un título y selecciona un archivo.', 'warning');
+    }
+
+   const file = archivoInput.files[0];
+
+    // ¡EL ESCUDO VA AQUÍ! Revisamos antes de poner a cargar la página
+    if (file.type !== 'application/pdf') {
+        return Swal.fire('Formato incorrecto', 'Por seguridad, el sistema solo permite subir archivos PDF.', 'error');
+    }
+
+    mostrarCargando(); // Si pasó el escudo, ahí sí mostramos la carga
+
+    try {
+        // 1. Subir el archivo al Storage de Supabase (Bucket: 'documentos')
+        // Le ponemos la fecha al nombre para que no se repitan si suben dos con el mismo nombre
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${idConjunto}/${Date.now()}.${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('documentos')
+            .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        // 2. Obtener la URL pública del archivo
+        const { data: publicUrlData } = supabase.storage
+            .from('documentos')
+            .getPublicUrl(fileName);
+
+        const archivo_url = publicUrlData.publicUrl;
+
+        // 3. Guardar el registro en la tabla 'documentos'
+        const { error: dbError } = await supabase.from('documentos').insert([{
+            copropiedad_id: idConjunto,
+            titulo: titulo,
+            descripcion: desc,
+            categoria: categoria,
+            archivo_url: archivo_url
+        }]);
+
+        if (dbError) throw dbError;
+
+        Swal.fire('¡Éxito!', 'Documento subido correctamente', 'success');
+        
+        // Limpiar formulario y recargar tabla
+        document.getElementById('doc-titulo').value = '';
+        document.getElementById('doc-desc').value = '';
+        archivoInput.value = '';
+        cargarDocumentosAdmin();
+
+    } catch (error) {
+        console.error("Error guardando documento:", error);
+        Swal.fire('Error', 'No se pudo subir el documento.', 'error');
+    } finally {
+        ocultarCargando();
+    }
+};
+
+// ==========================================
+// MÓDULO: FORMULARIOS EXTERNOS (ADMIN)
+// ==========================================
+
+window.abrirModalFormularios = () => {
+    document.getElementById('modal-admin-formularios').classList.remove('hidden');
+    cargarFormulariosAdmin();
+};
+
+window.cargarFormulariosAdmin = async () => {
+    const idConjunto = sessionStorage.getItem('copropiedad_id');
+    const tbody = document.getElementById('tabla-formularios-admin');
+    if (!idConjunto || !tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-slate-400">Cargando...</td></tr>';
+
+    try {
+        const { data, error } = await supabase
+            .from('formularios_externos')
+            .select('*')
+            .eq('copropiedad_id', idConjunto)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        tbody.innerHTML = '';
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-slate-400">No hay encuestas activas</td></tr>';
+            return;
+        }
+
+        data.forEach(form => {
+            const estadoBadge = form.activo 
+                ? '<span class="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-bold">ACTIVO</span>'
+                : '<span class="px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold">INACTIVO</span>';
+
+            tbody.innerHTML += `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-4 py-3">
+                        <p class="font-bold text-slate-800 text-sm">${form.titulo}</p>
+                    </td>
+                    <td class="px-4 py-3 text-center">${estadoBadge}</td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="toggleEstadoFormulario('${form.id}', ${!form.activo})" class="text-slate-500 hover:text-blue-500 mx-2" title="Activar/Desactivar"><i class="fas fa-power-off"></i></button>
+                        <button onclick="eliminarRegistro('formularios_externos', '${form.id}', cargarFormulariosAdmin)" class="text-red-500 hover:text-red-700 mx-2" title="Eliminar"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+    } catch (error) {
+        console.error("Error cargando formularios:", error);
+    }
+};
+
+window.guardarFormulario = async () => {
+    const idConjunto = sessionStorage.getItem('copropiedad_id');
+    const titulo = document.getElementById('form-titulo').value.trim();
+    const desc = document.getElementById('form-desc').value.trim();
+    const url = document.getElementById('form-url').value.trim();
+
+    if (!titulo || !url) {
+        return Swal.fire('Faltan datos', 'El título y el link del formulario son obligatorios.', 'warning');
+    }
+
+    mostrarCargando();
+
+    try {
+        const { error } = await supabase.from('formularios_externos').insert([{
+            copropiedad_id: idConjunto,
+            titulo: titulo,
+            descripcion: desc,
+            iframe_url: url
+        }]);
+
+        if (error) throw error;
+
+        Swal.fire('¡Éxito!', 'Formulario vinculado correctamente', 'success');
+        
+        document.getElementById('form-titulo').value = '';
+        document.getElementById('form-desc').value = '';
+        document.getElementById('form-url').value = '';
+        cargarFormulariosAdmin();
+
+    } catch (error) {
+        console.error("Error guardando formulario:", error);
+        Swal.fire('Error', 'No se pudo guardar el formulario.', 'error');
+    } finally {
+        ocultarCargando();
+    }
+};
+
+// Función chiquita para prender o apagar un formulario sin borrarlo
+window.toggleEstadoFormulario = async (id, nuevoEstado) => {
+    try {
+        const { error } = await supabase.from('formularios_externos').update({ activo: nuevoEstado }).eq('id', id);
+        if (error) throw error;
+        cargarFormulariosAdmin();
+    } catch (error) {
+        console.error("Error actualizando estado:", error);
+    }
+};
