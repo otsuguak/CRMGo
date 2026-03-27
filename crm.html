@@ -252,32 +252,37 @@
                         <div class="flex items-center"><i class="fas fa-sliders-h w-6 text-purple-400/80"></i> Parametrizar</div>
                         <i class="fas fa-chevron-down text-xs text-slate-500"></i>
                     </button>
+                    
                     <div id="submenu-parametrizar" class="hidden flex-col bg-slate-800/30 rounded-xl mt-1 overflow-hidden border border-white/5 py-2">
-                        <button onclick="abrirModalConfigZonas()" class="w-full flex items-center py-2.5 pl-11 hover:text-white transition text-left text-xs text-slate-400 font-medium">
-                            <i class="fas fa-tree-city w-5 text-purple-400/60"></i> Zonas Comunes
+                        <button id="menu-zonas" onclick="abrirModalConfigZonas()" class="w-full flex items-center py-2.5 pl-11 hover:text-white transition text-left text-xs text-slate-400 font-medium">
+                            <i class="fas fa-tree-city w-6 text-purple-400/80"></i> Zonas Comunes
                         </button>
-                        <button onclick="abrirModalPortada()" class="w-full flex items-center py-2.5 pl-11 hover:text-white transition text-left text-xs text-slate-400 font-medium">
-                            <i class="fas fa-window-maximize w-5 text-blue-400/60"></i> Portada y Banner
+    
+                        <button id="menu-portada" onclick="abrirModalPortada()" class="w-full flex items-center py-2.5 pl-11 hover:text-white transition text-left text-xs text-slate-400 font-medium">
+                            <i class="fas fa-window-maximize w-6 text-blue-400/80"></i> Portada y Banner
                         </button>
-                        <button onclick="abrirModalNoticias()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
-                            <i class="fas fa-broadcast-tower w-6 text-blue-400/80"></i> Cartelera Digital
+    
+                        <button id="menu-noticias" onclick="abrirModalNoticias()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
+                            <i class="fas fa-bullhorn w-6 text-blue-400/80"></i> Cartelera Digital
                         </button>
-                        <button onclick="abrirModalReservas()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
-                        <i class="fas fa-calendar-alt w-6 text-orange-400/80"></i> Control Reservas
+    
+                        <button id="menu-reservas" onclick="abrirModalReservas()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
+                            <i class="fas fa-calendar-alt w-6 text-orange-400/80"></i> Control Reservas
                         </button>
 
                         <button id="menu-mercado" onclick="abrirModalInmuebles()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
                             <i class="fas fa-building w-6 text-green-400/80"></i> Mercado Inmobiliario
                         </button>
 
-                        <button onclick="abrirModalDocumentos()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
+                        <button id="menu-documentos" onclick="abrirModalDocumentos()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
                             <i class="fas fa-folder-open w-6 text-blue-400/80"></i> Documentos y Actas
                         </button>
 
-                        <button onclick="abrirModalFormularios()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
+                        <button id="menu-formularios" onclick="abrirModalFormularios()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
                             <i class="fas fa-clipboard-list w-6 text-emerald-400/80"></i> Encuestas y Forms
                         </button>
-                        </div>
+                    </div>
+
                     </div>
                 </div>    
             </nav>

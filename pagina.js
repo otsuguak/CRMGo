@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const respConfig = await fetch('/api/login');
         const infoSaaS = await respConfig.json();
         const idConjunto = infoSaaS.copropiedad_id;
+        const planAsignado = infoSaaS.plan || "STAR"; // Capturamos el plan
 
         if (!idConjunto) {
             console.warn("⚠️ Dominio no registrado. El portal no cargará datos.");
@@ -36,13 +37,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         sessionStorage.setItem('copropiedad_id_publico', idConjunto);
         // console.log("🔒 Carnet listo"); <-- Aquí está silenciado para la consola
 
+        // --- 1. APAGAMOS LAS SECCIONES QUE NO PAGARON ---
+        aplicarFeatureFlagPublico(planAsignado);
+
+        // --- 2. TRAEMOS LOS PERMISOS PARA NO HACER CONSULTAS INNECESARIAS ---
+        const misPermisos = CONFIG_SAAS[planAsignado.toUpperCase()] || CONFIG_SAAS["STAR"];
+
         // 5. AHORA SÍ: Con el carnet en mano, llamamos a todos al tiempo
         cargarConfiguracionPortal(); // NUEVO LLAMADO
         await cargarNoticiasPublicas();
-        await cargarZonasComunes(); 
-        await cargarInmueblesPublicos();
-        await cargarDocumentos();
-        await cargarFormularios();
+        // ¡Magia de optimización! Si es STAR, ni siquiera intenta buscar zonas o inmuebles
+        if (misPermisos.reservas) await cargarZonasComunes(); 
+        if (misPermisos.mercado) await cargarInmueblesPublicos();
+        if (misPermisos.documentos) await cargarDocumentos();
+        if (misPermisos.formularios) await cargarFormularios();
 
     } catch (error) {
         console.error("Error iniciando el portal público:", error);
@@ -536,4 +544,22 @@ async function cargarFormularios() {
     } catch (error) {
         console.error("Error cargando formularios:", error);
     }
+}
+
+function aplicarFeatureFlagPublico(plan) {
+    // Buscamos los permisos en tu archivo config.js
+    const planBuscado = plan ? plan.toUpperCase() : "STAR";
+    const misPermisos = CONFIG_SAAS[planBuscado] || CONFIG_SAAS["STAR"];
+    
+    // Capturamos las secciones completas
+    const secReservas = document.getElementById('seccion-reservas');
+    const secMercado = document.getElementById('seccion-mercado');
+    const secDocumentos = document.getElementById('seccion-documentos'); // Si le pusiste ID
+    const secFormularios = document.getElementById('seccion-formularios'); // Si le pusiste ID
+
+    // Si tiene permiso lo mostramos (block), si no, lo desaparecemos (none)
+    if (secReservas) secReservas.style.display = misPermisos.reservas ? 'block' : 'none';
+    if (secMercado) secMercado.style.display = misPermisos.mercado ? 'block' : 'none';
+    if (secDocumentos) secDocumentos.style.display = misPermisos.documentos ? 'block' : 'none';
+    if (secFormularios) secFormularios.style.display = misPermisos.formularios ? 'block' : 'none';
 }

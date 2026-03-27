@@ -1720,21 +1720,31 @@ async function verificarPlanSaaS() {
 }
 
 function aplicarFeatureFlag(plan) {
-    // Buscamos el plan en tu nuevo archivo config.js (Si no existe, usamos START)
-    const misPermisos = CONFIG_SAAS[plan] || CONFIG_SAAS["START"];
-    console.log("Aplicando permisos desde config.js:", misPermisos);
-
-    // Capturamos tu botón del HTML
-    const menuMercado = document.getElementById('menu-mercado');
+    // 1. Aseguramos que el plan esté en mayúsculas para que coincida con la matriz
+    const planBuscado = plan ? plan.toUpperCase() : "STAR";
+    const misPermisos = CONFIG_SAAS[planBuscado] || CONFIG_SAAS["STAR"];
     
-    // Método infalible para desaparecerlo
-    if (menuMercado) {
-        if (misPermisos.mercado === false) {
-            menuMercado.style.display = 'none'; 
-        } else {
-            menuMercado.style.display = 'flex'; 
+    console.log(`Aplicando permisos para el plan ${planBuscado}:`, misPermisos);
+
+    // 2. Mapeamos cada ID del HTML con su permiso correspondiente en la matriz
+    const modulos = [
+        { id: 'menu-zonas', permitido: misPermisos.zonas },
+        { id: 'menu-reservas', permitido: misPermisos.reservas },
+        { id: 'menu-mercado', permitido: misPermisos.mercado },
+        { id: 'menu-documentos', permitido: misPermisos.documentos },
+        { id: 'menu-formularios', permitido: misPermisos.formularios },
+        { id: 'menu-noticias', permitido: misPermisos.noticias },
+        { id: 'menu-portada', permitido: misPermisos.portada }
+    ];
+
+    // 3. El motor automático que prende o apaga
+    modulos.forEach(modulo => {
+        const botonElemento = document.getElementById(modulo.id);
+        if (botonElemento) {
+            // Si está permitido, lo muestra como flex (para que se vea bien). Si no, lo oculta.
+            botonElemento.style.display = modulo.permitido ? 'flex' : 'none';
         }
-    }
+    });
 }
 
 // Ejecutar apenas cargue la página
