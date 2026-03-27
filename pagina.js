@@ -2,39 +2,11 @@
 let noticiasGlobales = [];
 let inmueblesGlobales = [];
 
-// --- 2. EL MOTOR DE ARRANQUE SEGURO ---
-// Esto se ejecuta apenas el visitante abre la página web
+// --- 2. EL MOTOR DE ARRANQUE SEGURO UNIFICADO ---
 document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        // A. Preguntamos a Vercel a qué conjunto pertenece este link
-        const respConfig = await fetch('/api/login');
-        const infoSaaS = await respConfig.json();
-        
-        const idConjunto = infoSaaS.copropiedad_id;
+    console.log("Portal Comunitario iniciado. Preparando motores...");
 
-        if (!idConjunto) {
-            console.warn("⚠️ Dominio no registrado. El portal no cargará datos.");
-            return; // Detenemos todo si es un intruso
-        }
-
-        // B. Guardamos el carnet en el bolsillo del visitante (sessionStorage)
-        // Así las funciones de noticias e inmuebles lo pueden usar
-        sessionStorage.setItem('copropiedad_id_publico', idConjunto);
-        console.log("🔒 Carnet de visitante listo:", idConjunto);
-
-        // C. Ahora sí, con el carnet en mano, traemos la información
-        await cargarNoticiasPublicas();
-        await cargarInmueblesPublicos();
-
-    } catch (error) {
-        console.error("Error iniciando el portal público:", error);
-    }
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("Portal Comunitario iniciado. Conectando a Supabase...");
-
-    // Animaciones de Aparición (Scroll)
+    // 1. Preparamos las animaciones (Esto no necesita carnet)
     const observerOptions = { root: null, rootMargin: '0px', threshold: 0.15 };
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
@@ -44,14 +16,41 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }, observerOptions);
-
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    cargarConfiguracionPortal(); // NUEVO LLAMADO
-    cargarNoticiasPublicas(); // carga noticias 
-    cargarZonasComunes(); // NUEVO: Llamamos a las zonas
-    cargarInmueblesPublicos() //cargue de inmuebles 
+    // 2. Cargamos la portada que no necesita carnet de seguridad estricto
+    cargarConfiguracionPortal();
+
+    try {
+        // 3. Vamos a Vercel por el carnet del conjunto
+        const respConfig = await fetch('/api/login');
+        const infoSaaS = await respConfig.json();
+        const idConjunto = infoSaaS.copropiedad_id;
+
+        if (!idConjunto) {
+            console.warn("⚠️ Dominio no registrado. El portal no cargará datos.");
+            return; // Bloqueamos todo si es un intruso
+        }
+
+        // 4. Guardamos el carnet en el bolsillo
+        sessionStorage.setItem('copropiedad_id_publico', idConjunto);
+        // console.log("🔒 Carnet listo"); <-- Aquí está silenciado para la consola
+
+        // 5. AHORA SÍ: Con el carnet en mano, llamamos a todos al tiempo
+        cargarConfiguracionPortal(); // NUEVO LLAMADO
+        await cargarNoticiasPublicas();
+        await cargarZonasComunes(); 
+        await cargarInmueblesPublicos();
+        
+        // (Si ya agregaste las funciones nuevas, quítales las barras de comentario)
+        // await cargarDocumentos();
+        // await cargarFormularios();
+
+    } catch (error) {
+        console.error("Error iniciando el portal público:", error);
+    }
 });
+
 
 async function cargarConfiguracionPortal() {
     try {
