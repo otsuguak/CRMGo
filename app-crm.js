@@ -278,92 +278,66 @@ supabase.auth.onAuthStateChange((event) => {
 // ==========================================
 
 window.registrarUsuario = async () => {
-    const email = document.getElementById('reg-email').value;
+    const email = document.getElementById('reg-email').value.trim();
     const pass = document.getElementById('reg-pass').value;
-    const nombre = document.getElementById('reg-nombre').value;
+    const nombre = document.getElementById('reg-nombre').value.trim();
     const rol = document.getElementById('reg-rol').value;
-    const inmueble = document.getElementById('reg-inmueble').value;
-
-    // --- CAMBIO 1: Sacamos el carnet del conjunto que Vercel guardó ---
+    const inmueble = document.getElementById('reg-inmueble').value.trim();
     const idConjunto = sessionStorage.getItem('copropiedad_id');
 
     if (!email || !pass || !nombre) return Swal.fire('Campos vacíos', 'Completa todo el formulario', 'warning');
 
-    // --- CAMBIO 2: Escudo de seguridad ---
-    // Si alguien intenta registrarse sin estar en un dominio válido, lo bloqueamos
     if (!idConjunto) {
-        return Swal.fire('Error de Seguridad', 'No se detectó a qué conjunto pertenece este registro. Por favor recarga la página.', 'error');
+        return Swal.fire('Error de Seguridad', 'No se detectó el conjunto. Recarga la página.', 'error');
     }
 
     mostrarCargando();
 
-    // Validación estricta usando el Teléfono Rojo (RPC) para evitar "Usuarios Fantasmas"
+    // Validación del Administrador Único
     if (rol === 'agente') {
-        // --- CAMBIO 3: Le pasamos el carnet a Supabase para que busque solo en este conjunto ---
-        const { data: adminExiste, error: rpcError } = await supabase.rpc('check_admin_exists', {
-            p_copropiedad_id: idConjunto
-        });
-        
+        const { data: adminExiste } = await supabase.rpc('check_admin_exists', { p_copropiedad_id: idConjunto });
         if (adminExiste) {
             ocultarCargando();
-            return Swal.fire({
-                title: 'Acceso Denegado', 
-                text: 'Ya existe un administrador en tu conjunto. Por favor, selecciona el rol de Residente.', 
-                icon: 'warning',
-                confirmButtonColor: '#f59e0b'
-            });
+            return Swal.fire({ title: 'Acceso Denegado', text: 'Ya existe un administrador en tu conjunto.', icon: 'warning' });
         }
     }
 
     try {
+        // EL COMBO "TODO O NADA": Mandamos la info completa al Auth.
+        // El Trigger de Supabase se encargará de crear el perfil en la tabla 'usuarios'
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email: email,
             password: pass,
+            options: {
+                data: {
+                    nombre: nombre,
+                    rol: rol,
+                    inmueble: inmueble,
+                    copropiedad_id: idConjunto // Pasamos el carnet en los metadatos
+                }
+            }
         });
 
         if (authError) throw authError;
 
-        if(authData.user) {
-             const { error: dbError } = await supabase
-                .from('usuarios')
-                .insert([
-                    { 
-                        id: authData.user.id, 
-                        email: email, 
-                        nombre: nombre, 
-                        rol: rol, 
-                        inmueble: inmueble,
-                        copropiedad_id: idConjunto // --- CAMBIO 4: Amarramos el perfil al conjunto en la BD ---
-                    }
-                ]);
-            if (dbError) throw dbError;
-        }
-
-        Swal.fire('¡Éxito!', 'Usuario creado. Revisa tu correo si pedimos confirmación.', 'success');
+        Swal.fire('¡Éxito!', 'Usuario creado correctamente.', 'success');
         mostrarLogin();
 
     } catch (error) {
         console.error("Error original de Supabase:", error);
-        let mensajeEspanol = "Ocurrió un error inesperado al registrar el usuario.";
+        let mensajeEspanol = "Error inesperado al registrar el usuario.";
 
         if (error.message && error.message.includes("Password should be at least")) {
             mensajeEspanol = "La contraseña es muy débil. Debe tener al menos 8 caracteres.";
-        } else if (error.message && (error.message.includes("User already registered") || error.message.includes("already exists"))) {
-            mensajeEspanol = "Este correo electrónico ya se encuentra registrado en el sistema.";
-        } else if (error.message && error.message.includes("Acceso Denegado")) {
-            mensajeEspanol = "Lo sentimos, el perfil administrador ya existe en este CRM.";
-        } else if (error.message && error.message.includes("Invalid email")) {
-            mensajeEspanol = "El formato del correo electrónico no es válido.";
+        } else if (error.message && (error.message.toLowerCase().includes("already registered") || error.message.toLowerCase().includes("already exists"))) {
+            mensajeEspanol = "Este correo electrónico ya se encuentra registrado.";
+        } else if (error.message && (error.message.toLowerCase().includes("invalid email") || error.message.toLowerCase().includes("invalid format"))) {
+            mensajeEspanol = "El formato del correo no es válido. Verifica que no tenga espacios y use '@'.";
         } else {
             mensajeEspanol = error.message; 
         }
 
-        Swal.fire({
-            title: 'Error de Registro',
-            text: mensajeEspanol,
-            icon: 'error',
-            confirmButtonColor: '#d33'
-        });
+        Swal.fire({ title: 'Error de Registro', text: mensajeEspanol, icon: 'error', confirmButtonColor: '#d33' });
     } finally {
         ocultarCargando(); 
     }
