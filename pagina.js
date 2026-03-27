@@ -6,9 +6,9 @@ let inmueblesGlobales = [];
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("Portal Comunitario iniciado. Preparando motores...");
 
-    // 1. Preparamos las animaciones (Esto no necesita carnet)
+    // 1. Animaciones (Scroll Reveal)
     const observerOptions = { root: null, rootMargin: '0px', threshold: 0.15 };
-    const observer = new IntersectionObserver((entries, observer) => {
+    const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add('active');
@@ -18,11 +18,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, observerOptions);
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    // 2. Cargamos la portada que no necesita carnet de seguridad estricto
+    // 2. Configuración inicial
     cargarConfiguracionPortal();
 
     try {
-        // 3. Vamos a Vercel por el carnet y los permisos granulares
+        // 3. Llamada a Vercel para obtener datos del conjunto y permisos
         const respConfig = await fetch('/api/login');
         const infoSaaS = await respConfig.json();
         
@@ -31,11 +31,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         
-        // 4. Guardamos el carnet en el bolsillo
+        // 4. Guardar ID en sesión
         sessionStorage.setItem('copropiedad_id_publico', infoSaaS.copropiedad_id);
 
-        // --- LA MAGIA MODULAR ---
-        // Guardamos los permisos exactos que vienen de la base de datos
+        // 5. Guardar permisos granulares en memoria (Estructura Modular)
         const permisosGuardar = {
             zonas: infoSaaS.mod_zonas || false,
             reservas: infoSaaS.mod_reservas || false,
@@ -45,10 +44,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
         sessionStorage.setItem('permisos_saas', JSON.stringify(permisosGuardar));
 
-        // 1. Apagamos las secciones visuales que no pagaron
+        // 6. Aplicar lógica de visibilidad (Feature Flags)
         const misPermisos = aplicarPermisosPublicos();
 
-        // 2. AHORA SÍ: Llamamos a cargar la data, solo de los que tienen permiso
+        // 7. Carga selectiva de datos según permisos
         cargarConfiguracionPortal(); 
         await cargarNoticiasPublicas();
 
@@ -60,6 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error("Error iniciando el portal público:", error);
     }
+}); 
 
 
 async function cargarConfiguracionPortal() {
