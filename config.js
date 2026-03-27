@@ -41,4 +41,3 @@ window.CONFIG_SAAS = {
         salas: true 
     }
 };
-};
