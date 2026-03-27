@@ -285,10 +285,19 @@ window.registrarUsuario = async () => {
     const inmueble = document.getElementById('reg-inmueble').value.trim();
     const idConjunto = sessionStorage.getItem('copropiedad_id');
 
-    if (!email || !pass || !nombre) return Swal.fire('Campos vacíos', 'Completa todo el formulario', 'warning');
+    // Obligamos a que NINGÚN campo se vaya en blanco
+    if (!email || !pass || !nombre || !rol || !inmueble) {
+        return Swal.fire({
+            title: 'Campos incompletos', 
+            text: 'Por favor, diligencia absolutamente todos los datos, incluyendo tu rol y tu número de inmueble/torre.', 
+            icon: 'warning',
+            confirmButtonColor: '#f59e0b'
+        });
+    }
 
-    if (!idConjunto) {
-        return Swal.fire('Error de Seguridad', 'No se detectó el conjunto. Recarga la página.', 'error');
+   // Evitamos que pase si viene vacío, indefinido o con la palabra "null" como texto
+    if (!idConjunto || idConjunto === 'null' || idConjunto.trim() === '') {
+        return Swal.fire('Error de Seguridad', 'No se detectó el carnet del conjunto. Por favor, recarga la página e intenta de nuevo.', 'error');
     }
 
     mostrarCargando();
