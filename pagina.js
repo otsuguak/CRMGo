@@ -41,10 +41,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         await cargarNoticiasPublicas();
         await cargarZonasComunes(); 
         await cargarInmueblesPublicos();
-        
-        // (Si ya agregaste las funciones nuevas, quítales las barras de comentario)
-        // await cargarDocumentos();
-        // await cargarFormularios();
+        await cargarDocumentos();
+        await cargarFormularios();
 
     } catch (error) {
         console.error("Error iniciando el portal público:", error);
