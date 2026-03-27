@@ -1720,13 +1720,10 @@ async function verificarPlanSaaS() {
 }
 
 function aplicarFeatureFlag(plan) {
-    // 1. Aseguramos que el plan esté en mayúsculas para que coincida con la matriz
     const planBuscado = plan ? plan.toUpperCase() : "STAR";
     const misPermisos = CONFIG_SAAS[planBuscado] || CONFIG_SAAS["STAR"];
     
-    console.log(`Aplicando permisos para el plan ${planBuscado}:`, misPermisos);
-
-    // 2. Mapeamos cada ID del HTML con su permiso correspondiente en la matriz
+    // 1. Mapeamos cada ID con su permiso (incluyendo el de exportar)
     const modulos = [
         { id: 'menu-zonas', permitido: misPermisos.zonas },
         { id: 'menu-reservas', permitido: misPermisos.reservas },
@@ -1734,15 +1731,25 @@ function aplicarFeatureFlag(plan) {
         { id: 'menu-documentos', permitido: misPermisos.documentos },
         { id: 'menu-formularios', permitido: misPermisos.formularios },
         { id: 'menu-noticias', permitido: misPermisos.noticias },
-        { id: 'menu-portada', permitido: misPermisos.portada }
+        { id: 'menu-portada', permitido: misPermisos.portada },
+        { id: 'btn-exportar', permitido: misPermisos.exportar }, // <-- ¡Aquí está el nuevo!
+        { id: 'btn-salas', permitido: misPermisos.salas } // <-- ¡Aquí está el nuevo!
     ];
 
-    // 3. El motor automático que prende o apaga
+    // 2. Ejecutamos la regla de seguridad
     modulos.forEach(modulo => {
         const botonElemento = document.getElementById(modulo.id);
         if (botonElemento) {
-            // Si está permitido, lo muestra como flex (para que se vea bien). Si no, lo oculta.
-            botonElemento.style.display = modulo.permitido ? 'flex' : 'none';
+            if (!modulo.permitido) {
+                // Si el plan no lo permite, BORRAMOS el botón del código por completo.
+                // Así nos aseguramos de que ni un residente ni un administrador puedan verlo por error.
+                botonElemento.remove(); 
+            } else if (modulo.id !== 'btn-exportar') {
+                // Si sí lo permite (y no es el de exportar), lo mostramos normal
+                botonElemento.style.display = 'flex';
+            }
+            // (Nota: No le ponemos 'flex' automático al btn-exportar porque ese lo 
+            // muestra la función mostrarDashboard() solo si detecta que es administrador).
         }
     });
 }

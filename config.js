@@ -12,7 +12,9 @@ const CONFIG_SAAS = {
         documentos: true, 
         formularios: true, 
         noticias: true, 
-        portada: true 
+        portada: true,
+        exportar: false,
+        salas: false
     },
     // El plan intermedio: Tiene reservas pero no mercado inmobiliario
     "PRO": { 
@@ -21,8 +23,10 @@ const CONFIG_SAAS = {
         mercado: false, 
         documentos: true, 
         formularios: true, 
-        noticias: true, 
-        portada: true 
+        noticias: true,
+        portada: true,
+        exportar: false,
+        salas: false
     },
     // El plan premium: Tiene todo encendido
     "MASTER": { 
@@ -32,7 +36,9 @@ const CONFIG_SAAS = {
         documentos: true, 
         formularios: true, 
         noticias: true, 
-        portada: true 
+        portada: true,
+        exportar: true,
+        salas: true 
     }
 };
 };
