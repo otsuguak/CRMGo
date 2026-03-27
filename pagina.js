@@ -253,52 +253,57 @@ window.enviarReserva = async () => {
     }
 };
 
-// Función para traer Zonas Comunes desde Supabase
+// Función para traer Zonas Comunes filtradas por Conjunto
 async function cargarZonasComunes() {
     const contenedor = document.getElementById('contenedor-zonas');
     const selectZona = document.getElementById('res-zona');
     if (!contenedor || !selectZona) return;
 
-    const { data, error } = await supabase.from('zonas_comunes').select('*');
+    try {
+        // 1. Buscamos el carnet del conjunto
+        const idConjunto = sessionStorage.getItem('copropiedad_id_publico');
 
-    if (error || !data || data.length === 0) {
-        contenedor.innerHTML = '<p class="text-slate-400 col-span-full text-center py-4">No hay zonas comunes configuradas aún.</p>';
-        selectZona.innerHTML = '<option value="">Sin zonas disponibles</option>';
-        return;
-    }
+        if (!idConjunto) {
+            console.warn("⚠️ No se encontró la copropiedad para cargar zonas.");
+            return;
+        }
 
-    contenedor.innerHTML = '';
-    selectZona.innerHTML = '<option value="">Selecciona una zona...</option>';
+        // 2. Llamamos a la API de Vercel (El cajero seguro)
+        // OJO: Asegúrate de haber creado el archivo /api/zonas.js antes
+        const respuesta = await fetch(`/api/zonas?copropiedad_id=${idConjunto}`);
+        const resultado = await respuesta.json();
 
-    data.forEach(zona => {
-        // 1. Dibujar la tarjeta en la pantalla principal
-        const tarjeta = `
-            <div onclick="abrirModalReservaConZona('${zona.nombre}')" class="glass-card rounded-2xl p-5 flex flex-col items-center text-center hover:bg-slate-800 transition-colors cursor-pointer border-slate-700 hover:border-purple-500">
-                <div class="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center mb-4 text-blue-400 text-2xl">
-                    <i class="fa-solid ${zona.icono || 'fa-tree-city'}"></i>
+        if (!resultado.exito || !resultado.datos || resultado.datos.length === 0) {
+            contenedor.innerHTML = '<p class="text-slate-400 col-span-full text-center py-4">No hay zonas comunes configuradas aún.</p>';
+            selectZona.innerHTML = '<option value="">Sin zonas disponibles</option>';
+            return;
+        }
+
+        const data = resultado.datos;
+        contenedor.innerHTML = '';
+        selectZona.innerHTML = '<option value="">Selecciona una zona...</option>';
+
+        data.forEach(zona => {
+            // 1. Dibujar la tarjeta en la pantalla principal
+            const tarjeta = `
+                <div onclick="abrirModalReservaConZona('${zona.nombre}')" class="glass-card rounded-2xl p-5 flex flex-col items-center text-center hover:bg-slate-800 transition-colors cursor-pointer border-slate-700 hover:border-purple-500">
+                    <div class="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center mb-4 text-blue-400 text-2xl">
+                        <i class="fa-solid ${zona.icono || 'fa-tree-city'}"></i>
+                    </div>
+                    <h4 class="font-bold text-white">${zona.nombre}</h4>
+                    ${zona.aforo ? `<p class="text-xs text-slate-400 mt-2">Aforo: ${zona.aforo}</p>` : ''}
                 </div>
-                <h4 class="font-bold text-white">${zona.nombre}</h4>
-                ${zona.aforo ? `<p class="text-xs text-slate-400 mt-2">Aforo: ${zona.aforo}</p>` : ''}
-            </div>
-        `;
-        contenedor.innerHTML += tarjeta;
+            `;
+            contenedor.innerHTML += tarjeta;
 
-        // 2. Añadir la opción al desplegable del Modal
-        selectZona.innerHTML += `<option value="${zona.nombre}">${zona.nombre}</option>`;
-    });
+            // 2. Añadir la opción al desplegable del Modal
+            selectZona.innerHTML += `<option value="${zona.nombre}">${zona.nombre}</option>`;
+        });
+
+    } catch (error) {
+        console.error("Error cargando zonas desde la API:", error);
+    }
 }
-
-// Pequeño truco para que si le das clic a "Piscina", el select ya aparezca en "Piscina"
-window.abrirModalReservaConZona = (nombreZona) => {
-    document.getElementById('res-zona').value = nombreZona;
-    
-    // NUEVO: Bloquear visualmente los días anteriores en el calendario
-    const hoyLocal = new Date();
-    hoyLocal.setMinutes(hoyLocal.getMinutes() - hoyLocal.getTimezoneOffset());
-    document.getElementById('res-fecha').min = hoyLocal.toISOString().split('T')[0];
-
-    abrirModal('modal-reserva');
-};
 
 // ==========================================
 //  MÓDULO 3: MERCADO INMOBILIARIO (PÚBLICO)
