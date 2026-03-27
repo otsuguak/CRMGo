@@ -2,7 +2,7 @@
 // CONFIGURACIÓN GLOBAL DEL SAAS LUMENGROUP
 // ==========================================
 
-const CONFIG_SAAS = {
+window.CONFIG_SAAS = {
     // Aquí defines qué módulos se prenden (true) o se apagan (false) en cada plan
     // El plan más básico: No tiene reservas ni mercado
     "STAR": { 

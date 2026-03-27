@@ -549,7 +549,7 @@ async function cargarFormularios() {
 function aplicarFeatureFlagPublico(plan) {
     // Buscamos los permisos en tu archivo config.js
     const planBuscado = plan ? plan.toUpperCase() : "STAR";
-    const misPermisos = CONFIG_SAAS[planBuscado] || CONFIG_SAAS["STAR"];
+    const misPermisos = window.CONFIG_SAAS[planBuscado] || window.CONFIG_SAAS["STAR"];
     
     // Capturamos las secciones completas
     const secReservas = document.getElementById('seccion-reservas');

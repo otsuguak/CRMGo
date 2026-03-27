@@ -1721,7 +1721,7 @@ async function verificarPlanSaaS() {
 
 function aplicarFeatureFlag(plan) {
     const planBuscado = plan ? plan.toUpperCase() : "STAR";
-    const misPermisos = CONFIG_SAAS[planBuscado] || CONFIG_SAAS["STAR"];
+    const misPermisos = window.CONFIG_SAAS[planAsignado.toUpperCase()] || window.CONFIG_SAAS["STAR"];
     
     // 1. Mapeamos cada ID con su permiso (incluyendo el de exportar)
     const modulos = [
