@@ -223,19 +223,31 @@
             <nav class="flex-1 px-4 space-y-1.5 shrink-0">
                 <div class="text-[10px] uppercase text-slate-500 font-bold mb-3 ml-4 tracking-widest">Menú Principal</div>
                 
-                <button onclick="cargarDashboard()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
-                    <i class="fas fa-layer-group w-6 text-blue-400/80"></i> Panel Principal
-                </button>
+                    <button onclick="cargarDashboard()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
+                        <i class="fas fa-layer-group w-6 text-blue-400/80"></i> Panel Principal
+                    </button>
 
-                <button id="btn-nuevo-pqr" onclick="abrirModalCrear()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300 hidden">
-                    <i class="fas fa-plus-circle w-6 text-emerald-400/80"></i> Nuevo Caso
-                </button>
+                    <button id="btn-nuevo-pqr" onclick="abrirModalCrear()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300 hidden">
+                        <i class="fas fa-plus-circle w-6 text-emerald-400/80"></i> Nuevo Caso
+                    </button>
 
-                <button id="btn-exportar" onclick="exportarExcel()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300 hidden">
-                    <i class="fas fa-file-export w-6 text-emerald-400/80"></i> Exportar Datos
-                </button>
+                    <button id="btn-exportar" onclick="exportarExcel()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300 hidden">
+                        <i class="fas fa-file-export w-6 text-emerald-400/80"></i> Exportar Datos
+                    </button>
+
+                    <button onclick="abrirModalJitsi()" class="w-full flex items-center p-3.5 rounded-xl transition text-left text-sm font-semibold mt-2 border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 group">
+                        <i class="fas fa-video w-6 text-indigo-400 group-hover:animate-pulse"></i> Salas Virtuales
+                    </button>
+
+                    <button id="btn-directorio" onclick="abrirDirectorio()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300 hidden">
+                        <i class="fas fa-address-book w-6 text-yellow-400/80"></i> Directorio
+                    </button>
+
                 
-                <div id="btn-config-index" class="hidden flex-col w-full">
+                <div id="menu-admin-extra" class="hidden flex-col space-y-1.5 mt-6 pt-6 border-t border-white/5">
+                    <div class="text-[10px] uppercase text-slate-500 font-bold mb-3 ml-4 tracking-widest">Portal Web & Apps</div>
+
+                    <div id="btn-config-index" class="hidden flex-col w-full">
                     <button onclick="document.getElementById('submenu-parametrizar').classList.toggle('hidden')" class="btn-sidebar-master w-full flex justify-between items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
                         <div class="flex items-center"><i class="fas fa-sliders-h w-6 text-purple-400/80"></i> Parametrizar</div>
                         <i class="fas fa-chevron-down text-xs text-slate-500"></i>
@@ -247,39 +259,26 @@
                         <button onclick="abrirModalPortada()" class="w-full flex items-center py-2.5 pl-11 hover:text-white transition text-left text-xs text-slate-400 font-medium">
                             <i class="fas fa-window-maximize w-5 text-blue-400/60"></i> Portada y Banner
                         </button>
-                    </div>
-                </div>
-                
-                <button id="btn-directorio" onclick="abrirDirectorio()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300 hidden">
-                    <i class="fas fa-address-book w-6 text-yellow-400/80"></i> Directorio
-                </button>
-
-                <div id="menu-admin-extra" class="hidden flex-col space-y-1.5 mt-6 pt-6 border-t border-white/5">
-                    <div class="text-[10px] uppercase text-slate-500 font-bold mb-3 ml-4 tracking-widest">Portal Web & Apps</div>
-                    
-                    <button onclick="abrirModalNoticias()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
-                        <i class="fas fa-broadcast-tower w-6 text-blue-400/80"></i> Cartelera Digital
-                    </button>
-
-                    <button onclick="abrirModalJitsi()" class="w-full flex items-center p-3.5 rounded-xl transition text-left text-sm font-semibold mt-2 border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 group">
-                        <i class="fas fa-video w-6 text-indigo-400 group-hover:animate-pulse"></i> Salas Virtuales
-                    </button>
-                    
-                    <button onclick="abrirModalReservas()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
+                        <button onclick="abrirModalNoticias()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
+                            <i class="fas fa-broadcast-tower w-6 text-blue-400/80"></i> Cartelera Digital
+                        </button>
+                        <button onclick="abrirModalReservas()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
                         <i class="fas fa-calendar-alt w-6 text-orange-400/80"></i> Control Reservas
-                    </button>
+                        </button>
 
-                    <button id="menu-mercado" onclick="abrirModalInmuebles()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
-                        <i class="fas fa-building w-6 text-green-400/80"></i> Mercado Inmobiliario
-                    </button>
+                        <button id="menu-mercado" onclick="abrirModalInmuebles()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
+                            <i class="fas fa-building w-6 text-green-400/80"></i> Mercado Inmobiliario
+                        </button>
 
-                    <button onclick="abrirModalDocumentos()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
-                        <i class="fas fa-folder-open w-6 text-blue-400/80"></i> Documentos y Actas
-                    </button>
+                        <button onclick="abrirModalDocumentos()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
+                            <i class="fas fa-folder-open w-6 text-blue-400/80"></i> Documentos y Actas
+                        </button>
 
-                    <button onclick="abrirModalFormularios()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
-                        <i class="fas fa-clipboard-list w-6 text-emerald-400/80"></i> Encuestas y Forms
-                    </button>
+                        <button onclick="abrirModalFormularios()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
+                            <i class="fas fa-clipboard-list w-6 text-emerald-400/80"></i> Encuestas y Forms
+                        </button>
+                        </div>
+                    </div>
                 </div>    
             </nav>
 
