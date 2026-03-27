@@ -450,3 +450,93 @@ window.abrirDetalleInmueble = (id) => {
 
     abrirModal('modal-detalle-inmueble');
 };
+
+// ==========================================
+//  NUEVO MÓDULO: DOCUMENTOS Y MANUALES
+// ==========================================
+async function cargarDocumentos() {
+    const contenedor = document.getElementById('contenedor-documentos');
+    if (!contenedor) return;
+
+    try {
+        const idConjunto = sessionStorage.getItem('copropiedad_id_publico');
+        if (!idConjunto) return;
+
+        const respuesta = await fetch(`/api/documentos?copropiedad_id=${idConjunto}`);
+        const resultado = await respuesta.json();
+
+        if (!resultado.exito || !resultado.datos || resultado.datos.length === 0) {
+            contenedor.innerHTML = '<p class="text-slate-400 col-span-full text-center py-4">No hay documentos publicados por el momento.</p>';
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        resultado.datos.forEach(doc => {
+            // Un pequeño truco para ponerle el icono de PDF, Word o genérico según el link
+            let iconClass = 'fa-file-pdf text-red-500';
+            if(doc.archivo_url.toLowerCase().includes('.doc')) iconClass = 'fa-file-word text-blue-500';
+            else if(doc.archivo_url.toLowerCase().includes('.xls')) iconClass = 'fa-file-excel text-green-500';
+
+            contenedor.innerHTML += `
+                <div class="glass-card p-5 rounded-2xl border border-slate-700 hover:border-blue-500 transition-colors flex items-center gap-4 group">
+                    <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                        <i class="fa-solid ${iconClass} text-2xl"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">${doc.categoria || 'General'}</span>
+                        <h4 class="text-white font-bold truncate">${doc.titulo}</h4>
+                        <p class="text-xs text-slate-400 truncate">${doc.descripcion || 'Documento adjunto'}</p>
+                    </div>
+                    <a href="${doc.archivo_url}" target="_blank" title="Descargar" class="w-10 h-10 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors shrink-0">
+                        <i class="fa-solid fa-download"></i>
+                    </a>
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error("Error cargando documentos:", error);
+    }
+}
+
+// ==========================================
+//  NUEVO MÓDULO: FORMULARIOS E IFRAMES
+// ==========================================
+async function cargarFormularios() {
+    const contenedor = document.getElementById('contenedor-formularios');
+    if (!contenedor) return;
+
+    try {
+        const idConjunto = sessionStorage.getItem('copropiedad_id_publico');
+        if (!idConjunto) return;
+
+        const respuesta = await fetch(`/api/formularios?copropiedad_id=${idConjunto}`);
+        const resultado = await respuesta.json();
+
+        if (!resultado.exito || !resultado.datos || resultado.datos.length === 0) {
+            contenedor.innerHTML = '<p class="text-slate-400 col-span-full text-center py-4">No hay encuestas activas por ahora.</p>';
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        resultado.datos.forEach(form => {
+            contenedor.innerHTML += `
+                <div class="glass-card rounded-2xl border border-slate-700 overflow-hidden flex flex-col h-[500px]">
+                    <div class="p-4 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center shrink-0">
+                        <div>
+                            <h4 class="text-white font-bold">${form.titulo}</h4>
+                            <p class="text-xs text-slate-400">${form.descripcion || 'Completa el siguiente formulario'}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1 w-full bg-white relative">
+                        <iframe src="${form.iframe_url}" class="absolute top-0 left-0 w-full h-full border-none" frameborder="0" marginheight="0" marginwidth="0">Cargando…</iframe>
+                    </div>
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error("Error cargando formularios:", error);
+    }
+}
