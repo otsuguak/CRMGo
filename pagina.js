@@ -220,24 +220,35 @@ window.enviarReserva = async () => {
     Swal.fire({ title: 'Procesando...', allowOutsideClick: false, background: '#1e293b', color: '#fff', didOpen: () => Swal.showLoading() });
 
     try {
-        // 2. Revisar si ALGUIEN MÁS ya tiene aprobada esa zona en esa fecha
-        const { data: ocupado } = await supabase
-            .from('reservas')
-            .select('id')
-            .eq('zona', zona)
-            .eq('fecha', fecha)
-            .eq('estado', 'Aprobada');
+    
+    // --- PEGAR ESTO EN REEMPLAZO ---
+        // Necesitamos el carnet del conjunto para que la reserva quede asociada a esta copropiedad
+        const idConjunto = sessionStorage.getItem('copropiedad_id_publico');
 
-        if (ocupado && ocupado.length > 0) {
-            return Swal.fire({ icon: 'error', title: 'No Disponible', text: `La ${zona} ya está reservada para esa fecha. Elige otra.`, background: '#1e293b', color: '#fff' });
+        if (!idConjunto) {
+            throw new Error("No se encontró el ID de la copropiedad.");
         }
 
-        // 3. Enviar la solicitud a la base de datos
-        const { error } = await supabase.from('reservas').insert([{
-            zona: zona, fecha: fecha, apto: apto, email: email, estado: 'Pendiente'
-        }]);
+        // Usamos fetch para llamar a nuestra API segura en Vercel
+        const respuesta = await fetch('/api/reservas', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                copropiedad_id: idConjunto, // Pasamos el carnet
+                zona: zona,
+                fecha: fecha,
+                apto: apto,
+                email: email
+            })
+        });
 
-        if (error) throw error;
+        const resultado = await respuesta.json();
+
+        if (!resultado.exito) {
+            return Swal.fire({ icon: 'error', title: 'Error', text: resultado.mensaje || 'No se pudo hacer la reserva.', background: '#1e293b', color: '#fff' });
+        }
 
         Swal.fire({ icon: 'success', title: 'Solicitud Enviada', text: 'El administrador revisará tu solicitud y te notificará.', background: '#1e293b', color: '#fff' });
         
@@ -246,6 +257,7 @@ window.enviarReserva = async () => {
         document.getElementById('res-apto').value = '';
         document.getElementById('res-email').value = '';
         cerrarModal('modal-reserva');
+        // --- FIN DE LO QUE HAY QUE PEGAR --- 
 
     } catch (e) {
         console.error(e);
