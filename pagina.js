@@ -22,31 +22,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     cargarConfiguracionPortal();
 
     try {
-        // 3. Vamos a Vercel por el carnet del conjunto
+        // 3. Vamos a Vercel por el carnet y los permisos granulares
         const respConfig = await fetch('/api/login');
         const infoSaaS = await respConfig.json();
-        const idConjunto = infoSaaS.copropiedad_id;
-        const planAsignado = infoSaaS.plan || "STAR"; // Capturamos el plan
-
-        if (!idConjunto) {
-            console.warn("⚠️ Dominio no registrado. El portal no cargará datos.");
-            return; // Bloqueamos todo si es un intruso
+        
+        if (!infoSaaS.copropiedad_id) {
+            console.warn("⚠️ Dominio no registrado. El portal no cargará datos."); 
+            return;
         }
-
+        
         // 4. Guardamos el carnet en el bolsillo
-        sessionStorage.setItem('copropiedad_id_publico', idConjunto);
-        // console.log("🔒 Carnet listo"); <-- Aquí está silenciado para la consola
+        sessionStorage.setItem('copropiedad_id_publico', infoSaaS.copropiedad_id);
 
-        // --- 1. APAGAMOS LAS SECCIONES QUE NO PAGARON ---
-        aplicarFeatureFlagPublico(planAsignado);
+        // --- LA MAGIA MODULAR ---
+        // Guardamos los permisos exactos que vienen de la base de datos
+        const permisosGuardar = {
+            zonas: infoSaaS.mod_zonas || false,
+            reservas: infoSaaS.mod_reservas || false,
+            mercado: infoSaaS.mod_mercado || false,
+            documentos: infoSaaS.mod_documentos !== false, 
+            formularios: infoSaaS.mod_formularios !== false
+        };
+        sessionStorage.setItem('permisos_saas', JSON.stringify(permisosGuardar));
 
-        // --- 2. TRAEMOS LOS PERMISOS PARA NO HACER CONSULTAS INNECESARIAS ---
-        const misPermisos = CONFIG_SAAS[planAsignado.toUpperCase()] || CONFIG_SAAS["STAR"];
+        // 1. Apagamos las secciones visuales que no pagaron
+        const misPermisos = aplicarPermisosPublicos();
 
-        // 5. AHORA SÍ: Con el carnet en mano, llamamos a todos al tiempo
-        cargarConfiguracionPortal(); // NUEVO LLAMADO
+        // 2. AHORA SÍ: Llamamos a cargar la data, solo de los que tienen permiso
+        cargarConfiguracionPortal(); 
         await cargarNoticiasPublicas();
-        // ¡Magia de optimización! Si es STAR, ni siquiera intenta buscar zonas o inmuebles
+
         if (misPermisos.reservas) await cargarZonasComunes(); 
         if (misPermisos.mercado) await cargarInmueblesPublicos();
         if (misPermisos.documentos) await cargarDocumentos();
@@ -55,7 +60,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error("Error iniciando el portal público:", error);
     }
-});
 
 
 async function cargarConfiguracionPortal() {
@@ -546,20 +550,19 @@ async function cargarFormularios() {
     }
 }
 
-function aplicarFeatureFlagPublico(plan) {
-    // Buscamos los permisos en tu archivo config.js
-    const planBuscado = plan ? plan.toUpperCase() : "STAR";
-    const misPermisos = window.CONFIG_SAAS[planBuscado] || window.CONFIG_SAAS["STAR"];
+function aplicarPermisosPublicos() {
+    const permisosStr = sessionStorage.getItem('permisos_saas');
+    const permisos = permisosStr ? JSON.parse(permisosStr) : {};
     
-    // Capturamos las secciones completas
     const secReservas = document.getElementById('seccion-reservas');
     const secMercado = document.getElementById('seccion-mercado');
-    const secDocumentos = document.getElementById('seccion-documentos'); // Si le pusiste ID
-    const secFormularios = document.getElementById('seccion-formularios'); // Si le pusiste ID
+    const secDocumentos = document.getElementById('seccion-documentos'); 
+    const secFormularios = document.getElementById('seccion-formularios'); 
 
-    // Si tiene permiso lo mostramos (block), si no, lo desaparecemos (none)
-    if (secReservas) secReservas.style.display = misPermisos.reservas ? 'block' : 'none';
-    if (secMercado) secMercado.style.display = misPermisos.mercado ? 'block' : 'none';
-    if (secDocumentos) secDocumentos.style.display = misPermisos.documentos ? 'block' : 'none';
-    if (secFormularios) secFormularios.style.display = misPermisos.formularios ? 'block' : 'none';
+    if (secReservas) secReservas.style.display = permisos.reservas ? 'block' : 'none';
+    if (secMercado) secMercado.style.display = permisos.mercado ? 'block' : 'none';
+    if (secDocumentos) secDocumentos.style.display = permisos.documentos ? 'block' : 'none';
+    if (secFormularios) secFormularios.style.display = permisos.formularios ? 'block' : 'none';
+    
+    return permisos; // Devolvemos los permisos para que el motor de arranque los use
 }

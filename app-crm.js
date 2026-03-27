@@ -101,21 +101,26 @@ function mostrarDashboard() {
     mostrar('btn-directorio');
 
     if (usuarioActual.rol === 'agente') {
-        // Si es Admin: Mostramos todo lo de Admin
         document.getElementById('menu-admin-extra')?.classList.remove('hidden');
-        ocultar('btn-nuevo-pqr');
-        mostrar('btn-exportar');
-        mostrar('btn-config-index');
+        const btnNuevoPqr = document.getElementById('btn-nuevo-pqr'); if (btnNuevoPqr) btnNuevoPqr.classList.add('hidden');
+        const btnExportar = document.getElementById('btn-exportar'); if (btnExportar) btnExportar.classList.remove('hidden');
+        const btnConfigIndex = document.getElementById('btn-config-index'); if (btnConfigIndex) btnConfigIndex.classList.remove('hidden');
     } else {
-        // Si es Residente: Escondemos rotundamente lo de Admin
-        document.getElementById('menu-admin-extra')?.classList.add('hidden'); // <-- ¡ESTA ES LA LÍNEA MÁGICA!
-        mostrar('btn-nuevo-pqr');
-        ocultar('btn-exportar');
-        ocultar('btn-config-index');
+        document.getElementById('menu-admin-extra')?.classList.add('hidden');
+        const btnNuevoPqr = document.getElementById('btn-nuevo-pqr'); if (btnNuevoPqr) btnNuevoPqr.classList.remove('hidden');
+        const btnExportar = document.getElementById('btn-exportar'); if (btnExportar) btnExportar.classList.add('hidden');
+        const btnConfigIndex = document.getElementById('btn-config-index'); if (btnConfigIndex) btnConfigIndex.classList.add('hidden');
     }
+
+    // ¡AQUÍ ESTÁ LA CLAVE! 
+    // Después de que el sistema intenta mostrar los botones de admin, 
+    // pasamos la guillotina de los permisos para destruir los que no ha pagado.
+    aplicarPermisosUI();
 
     cargarDatosRealtime();
 }
+
+
 
 window.mostrarRegistro = () => {
     document.getElementById('login-section').classList.add('hidden');
@@ -1681,78 +1686,72 @@ window.compartirJitsiCorreo = () => {
     window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
 };
 
+
 // ==========================================
-// NUEVO MOTOR SAAS: CONEXIÓN A VERCEL (CORREGIDO)
+// NUEVO MOTOR SAAS: MODULAR A LA CARTA
 // ==========================================
 async function verificarPlanSaaS() {
     try {
-        console.log("Preguntándole a Vercel qué plan tiene este dominio...");
         const respuesta = await fetch('/api/login');
         const infoSaaS = await respuesta.json();
 
-        // ¡AQUÍ ESTABA EL ERROR! Ahora leemos "infoSaaS.plan" correctamente.
-        // Si por alguna razón falla, le ponemos "START" para proteger tu negocio.
-        const planAsignado = infoSaaS.plan || "START"; 
-
-        console.log("✅ Vercel respondió. El plan asignado es:", planAsignado);
-
-        // Guardamos el plan y apagamos los botones
-        sessionStorage.setItem('planActual', planAsignado);
-        aplicarFeatureFlag(planAsignado);
-
-        // --- INICIO CÓDIGO NUEVO DE SEGURIDAD ---
-        // 1. Atrapamos el ID secreto que nos acaba de mandar Vercel
-        const idConjunto = infoSaaS.copropiedad_id || null;
-
-        // 2. Lo guardamos en la caja fuerte del navegador (sessionStorage)
-        if (idConjunto) {
-            sessionStorage.setItem('copropiedad_id', idConjunto);
-            console.log("🔒 Carnet de seguridad guardado. ID:", idConjunto);
-        } else {
-            console.warn("⚠️ Ojo: No se recibió ID de Copropiedad. El usuario está como visitante.");
+        // 1. Guardamos el ID del conjunto
+        if (infoSaaS.copropiedad_id) {
+            sessionStorage.setItem('copropiedad_id', infoSaaS.copropiedad_id);
         }
-        // --- FIN CÓDIGO NUEVO DE SEGURIDAD ---
+
+        // 2. MAGIA: Guardamos los permisos EXACTOS de este conjunto en la memoria
+        // Asumimos que tu API de Vercel devuelve las columnas mod_zonas, mod_mercado, etc.
+        const permisos = {
+            zonas: infoSaaS.mod_zonas || false,
+            reservas: infoSaaS.mod_reservas || false,
+            mercado: infoSaaS.mod_mercado || false,
+            exportar: infoSaaS.mod_exportar || false,
+            // Estos por defecto siempre son true a menos que digas lo contrario
+            documentos: infoSaaS.mod_documentos !== false, 
+            formularios: infoSaaS.mod_formularios !== false,
+            noticias: true, 
+            portada: true
+        };
+
+        // Guardamos el objeto como un texto en el sessionStorage para usarlo en toda la app
+        sessionStorage.setItem('permisos_saas', JSON.stringify(permisos));
 
     } catch (error) {
-        console.error("❌ Error de red conectando con Vercel:", error);
-        aplicarFeatureFlag("START"); // Si no hay internet o Vercel falla, escondemos todo por seguridad
+        console.error("Error conectando con Vercel. Aplicando permisos mínimos por seguridad:", error);
+        sessionStorage.setItem('permisos_saas', JSON.stringify({})); // Todo apagado si falla
     }
 }
 
-function aplicarFeatureFlag(plan) {
-    const planBuscado = plan ? plan.toUpperCase() : "STAR";
-    const misPermisos = window.CONFIG_SAAS[planAsignado.toUpperCase()] || window.CONFIG_SAAS["STAR"];
-    
-    // 1. Mapeamos cada ID con su permiso (incluyendo el de exportar)
+// 3. LA GUILLOTINA: Esta función destruye lo que no está pagado
+window.aplicarPermisosUI = () => {
+    // Leemos los permisos que guardamos en la memoria
+    const permisosStr = sessionStorage.getItem('permisos_saas');
+    const permisos = permisosStr ? JSON.parse(permisosStr) : {};
+
     const modulos = [
-        { id: 'menu-zonas', permitido: misPermisos.zonas },
-        { id: 'menu-reservas', permitido: misPermisos.reservas },
-        { id: 'menu-mercado', permitido: misPermisos.mercado },
-        { id: 'menu-documentos', permitido: misPermisos.documentos },
-        { id: 'menu-formularios', permitido: misPermisos.formularios },
-        { id: 'menu-noticias', permitido: misPermisos.noticias },
-        { id: 'menu-portada', permitido: misPermisos.portada },
-        { id: 'btn-exportar', permitido: misPermisos.exportar }, // <-- ¡Aquí está el nuevo!
-        { id: 'btn-salas', permitido: misPermisos.salas } // <-- ¡Aquí está el nuevo!
+        { id: 'menu-zonas', activo: permisos.zonas },
+        { id: 'menu-reservas', activo: permisos.reservas },
+        { id: 'menu-mercado', activo: permisos.mercado },
+        { id: 'menu-documentos', activo: permisos.documentos },
+        { id: 'menu-formularios', activo: permisos.formularios },
+        { id: 'menu-noticias', activo: permisos.noticias },
+        { id: 'menu-portada', activo: permisos.portada },
+        { id: 'btn-exportar', activo: permisos.exportar },
+        { id: 'btn-salas', activo: permisos.salas },
     ];
 
-    // 2. Ejecutamos la regla de seguridad
     modulos.forEach(modulo => {
-        const botonElemento = document.getElementById(modulo.id);
-        if (botonElemento) {
-            if (!modulo.permitido) {
-                // Si el plan no lo permite, BORRAMOS el botón del código por completo.
-                // Así nos aseguramos de que ni un residente ni un administrador puedan verlo por error.
-                botonElemento.remove(); 
-            } else if (modulo.id !== 'btn-exportar') {
-                // Si sí lo permite (y no es el de exportar), lo mostramos normal
-                botonElemento.style.display = 'flex';
+        const elemento = document.getElementById(modulo.id);
+        if (elemento) {
+            if (!modulo.activo) {
+                elemento.remove(); // ¡DESTRUCCIÓN TOTAL! Ni el admin lo verá.
+            } else if (modulo.id !== 'btn-exportar' && modulo.id !== 'btn-nuevo-pqr') {
+                elemento.style.display = 'flex'; // Lo mostramos bonito
             }
-            // (Nota: No le ponemos 'flex' automático al btn-exportar porque ese lo 
-            // muestra la función mostrarDashboard() solo si detecta que es administrador).
         }
     });
-}
+};
 
 // Ejecutar apenas cargue la página
 document.addEventListener('DOMContentLoaded', () => {

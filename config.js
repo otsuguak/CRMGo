@@ -21,7 +21,7 @@ window.CONFIG_SAAS = {
         zonas: true, 
         reservas: true, 
         mercado: false, 
-        documentos: true, 
+        documentos: false, 
         formularios: true, 
         noticias: true,
         portada: true,
