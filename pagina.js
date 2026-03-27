@@ -253,29 +253,24 @@ window.enviarReserva = async () => {
     }
 };
 
-// Función para traer Zonas Comunes filtradas por Conjunto
+// ==========================================
+//  MÓDULO 2: Cargar zonas comunes
+// ==========================================
 async function cargarZonasComunes() {
     const contenedor = document.getElementById('contenedor-zonas');
     const selectZona = document.getElementById('res-zona');
     if (!contenedor || !selectZona) return;
 
     try {
-        // 1. Buscamos el carnet del conjunto
         const idConjunto = sessionStorage.getItem('copropiedad_id_publico');
+        if (!idConjunto) return;
 
-        if (!idConjunto) {
-            console.warn("⚠️ No se encontró la copropiedad para cargar zonas.");
-            return;
-        }
-
-        // 2. Llamamos a la API de Vercel (El cajero seguro)
-        // OJO: Asegúrate de haber creado el archivo /api/zonas.js antes
+        // Cambiamos el 'await supabase' por un 'fetch' a nuestra API segura
         const respuesta = await fetch(`/api/zonas?copropiedad_id=${idConjunto}`);
         const resultado = await respuesta.json();
 
-        if (!resultado.exito || !resultado.datos || resultado.datos.length === 0) {
-            contenedor.innerHTML = '<p class="text-slate-400 col-span-full text-center py-4">No hay zonas comunes configuradas aún.</p>';
-            selectZona.innerHTML = '<option value="">Sin zonas disponibles</option>';
+        if (!resultado.exito || !resultado.datos) {
+            contenedor.innerHTML = '<p class="text-slate-400 col-span-full text-center py-4">No hay zonas configuradas.</p>';
             return;
         }
 
@@ -284,24 +279,18 @@ async function cargarZonasComunes() {
         selectZona.innerHTML = '<option value="">Selecciona una zona...</option>';
 
         data.forEach(zona => {
-            // 1. Dibujar la tarjeta en la pantalla principal
-            const tarjeta = `
+            contenedor.innerHTML += `
                 <div onclick="abrirModalReservaConZona('${zona.nombre}')" class="glass-card rounded-2xl p-5 flex flex-col items-center text-center hover:bg-slate-800 transition-colors cursor-pointer border-slate-700 hover:border-purple-500">
                     <div class="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center mb-4 text-blue-400 text-2xl">
                         <i class="fa-solid ${zona.icono || 'fa-tree-city'}"></i>
                     </div>
                     <h4 class="font-bold text-white">${zona.nombre}</h4>
                     ${zona.aforo ? `<p class="text-xs text-slate-400 mt-2">Aforo: ${zona.aforo}</p>` : ''}
-                </div>
-            `;
-            contenedor.innerHTML += tarjeta;
-
-            // 2. Añadir la opción al desplegable del Modal
+                </div>`;
             selectZona.innerHTML += `<option value="${zona.nombre}">${zona.nombre}</option>`;
         });
-
     } catch (error) {
-        console.error("Error cargando zonas desde la API:", error);
+        console.error("Error en la API de zonas:", error);
     }
 }
 
