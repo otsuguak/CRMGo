@@ -331,15 +331,16 @@ async function cargarInmueblesPublicos() {
 
         inmueblesGlobales = data;
 
-        // 1. Filtrar los Destacados para la pantalla principal (máximo 8)
-        const destacados = data.filter(inm => inm.destacado === true).slice(0, 8);
+    // --- 2. AQUÍ ESTÁ EL CAMBIO (El Filtro) ---
         
-        // Si no hay destacados, mostramos los últimos 8 que se subieron
-        const paraMostrarEnInicio = destacados.length > 0 ? destacados : data.slice(0, 8);
-        renderizarTarjetasInmuebles(paraMostrarEnInicio, 'contenedor-inmuebles-destacados');
+        // Filtramos estrictamente los que tengan el campo 'destacado' en true
+        const destacados = data.filter(inm => inm.destacado === true);
+        
+        // Renderizamos SOLO los destacados arriba (Máximo 8)
+        renderizarTarjetasInmuebles(destacados.slice(0, 8), 'contenedor-inmuebles-destacados');
 
-        // 2. Llenar el catálogo completo
-        renderizarTarjetasInmuebles(data, 'contenedor-catalogo-completo');
+        // Llenamos el catálogo completo abajo (Aquí sí van todos)
+        renderizarTarjetasInmuebles(data, 'contenedor-catalogo-completo');   
 
     } catch (error) {
         console.error("Error de red conectando con Vercel para inmuebles:", error);
