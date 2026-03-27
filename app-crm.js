@@ -1792,6 +1792,58 @@ window.cargarDocumentosAdmin = async () => {
     }
 };
 
+// ==========================================
+// PEAJE DE LÍMITES SAAS (UPSELLING)
+// ==========================================
+window.verificarLimitesPlan = async (tabla) => {
+    const idConjunto = sessionStorage.getItem('copropiedad_id');
+
+    try {
+        // 1. Consultamos qué plan tiene este conjunto en clientes_saas
+        const { data: cliente, error: errCliente } = await supabase
+            .from('clientes_saas')
+            .select('plan')
+            .eq('copropiedad_id', idConjunto)
+            .single();
+
+        // Si por alguna razón no tiene plan, le ponemos el más bajito por defecto
+        let planActual = 'star'; 
+        if (cliente && cliente.plan) planActual = cliente.plan.toLowerCase();
+
+        // 2. Tus reglas de negocio (Los límites que definiste)
+        const limites = {
+            'star': { documentos: 4, formularios_externos: 2 },
+            'pro': { documentos: 6, formularios_externos: 4 },
+            'master': { documentos: 8, formularios_externos: 6 }
+        };
+
+        const limitePermitido = limites[planActual][tabla];
+
+        // 3. Contamos cuántos registros ya tiene creados en esa tabla
+        const { count, error: errCount } = await supabase
+            .from(tabla)
+            .select('*', { count: 'exact', head: true })
+            .eq('copropiedad_id', idConjunto);
+
+        // 4. Tomamos la decisión
+        if (count >= limitePermitido) {
+            Swal.fire({
+                title: '¡Límite de Plan Alcanzado!',
+                text: `Tu plan actual (${planActual.toUpperCase()}) permite hasta ${limitePermitido} ${tabla === 'documentos' ? 'archivos' : 'formularios'}. ¡Contáctanos para hacer un Upgrade y disfrutar sin límites!`,
+                icon: 'info',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#f59e0b'
+            });
+            return false; // Bajamos la talanquera, no lo dejamos pasar
+        }
+
+        return true; // Levantamos la talanquera, puede guardar
+    } catch (error) {
+        console.error("Error verificando límites:", error);
+        return false; // Por seguridad, si hay error, bloqueamos
+    }
+};
+
 window.guardarDocumento = async () => {
     const idConjunto = sessionStorage.getItem('copropiedad_id');
     const titulo = document.getElementById('doc-titulo').value.trim();
@@ -1809,6 +1861,11 @@ window.guardarDocumento = async () => {
     if (file.type !== 'application/pdf') {
         return Swal.fire('Formato incorrecto', 'Por seguridad, el sistema solo permite subir archivos PDF.', 'error');
     }
+
+    // --- NUEVO: Pasamos por el peaje del plan SaaS ---
+    const puedeGuardar = await verificarLimitesPlan('documentos');
+    if (!puedeGuardar) return; 
+    // --------------------------------------------------
 
     mostrarCargando(); // Si pasó el escudo, ahí sí mostramos la carga
 
@@ -1921,6 +1978,11 @@ window.guardarFormulario = async () => {
     if (!titulo || !url) {
         return Swal.fire('Faltan datos', 'El título y el link del formulario son obligatorios.', 'warning');
     }
+
+    // --- NUEVO: Pasamos por el peaje del plan SaaS ---
+    const puedeGuardar = await verificarLimitesPlan('formularios_externos');
+    if (!puedeGuardar) return; 
+    // --------------------------------------------------
 
     mostrarCargando();
 
