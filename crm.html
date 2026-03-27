@@ -200,6 +200,8 @@
         </div>
     </div>
 
+    <!--Mostrar menu lateral-->
+
    <div id="dashboard" class="hidden h-[100dvh] bg-slate-50 flex overflow-hidden w-full relative selection:bg-blue-200 selection:text-blue-900">
         
         <div id="mobile-overlay" onclick="toggleMenu()" class="fixed inset-0 bg-slate-900/40 z-40 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
@@ -269,6 +271,14 @@
 
                     <button id="menu-mercado" onclick="abrirModalInmuebles()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
                         <i class="fas fa-building w-6 text-green-400/80"></i> Mercado Inmobiliario
+                    </button>
+
+                    <button onclick="abrirModalDocumentos()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
+                        <i class="fas fa-folder-open w-6 text-blue-400/80"></i> Documentos y Actas
+                    </button>
+
+                    <button onclick="abrirModalFormularios()" class="btn-sidebar-master w-full flex items-center p-3.5 rounded-xl text-left text-sm font-semibold text-slate-300">
+                        <i class="fas fa-clipboard-list w-6 text-emerald-400/80"></i> Encuestas y Forms
                     </button>
                 </div>    
             </nav>
@@ -921,6 +931,106 @@
                     <button onclick="compartirJitsiCorreo()" class="w-full bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold p-4 rounded-2xl transition-colors flex items-center justify-center uppercase tracking-wider shadow-lg">
                         <i class="fas fa-envelope text-lg mr-2"></i> Correo
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--modal ventanas emejergentes documentos y formularios-->
+
+    <div id="modal-admin-documentos" class="hidden fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center backdrop-blur-md p-4 transition-all">
+        <div class="bg-slate-50 rounded-[2rem] shadow-2xl border border-slate-100 w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden fade-in">
+            <div class="px-8 py-5 border-b border-slate-200 flex justify-between items-center bg-white shrink-0">
+                <h3 class="font-extrabold text-2xl text-slate-800 tracking-tight"><i class="fas fa-folder-open mr-3 text-blue-500"></i>Gestión de Documentos</h3>
+                <button onclick="cerrarModal('modal-admin-documentos')" class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-500 transition-colors flex items-center justify-center"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            
+            <div class="p-6 md:p-8 flex-1 overflow-y-auto custom-scroll grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-5 bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm h-max">
+                    <h4 class="font-black text-slate-800 mb-6 text-lg">Subir Nuevo Archivo</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Categoría</label>
+                            <select id="doc-categoria" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-slate-700">
+                                <option value="Formatos">Formatos</option><option value="Legal">Legal</option><option value="Actas">Actas</option><option value="General">General</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Título del Documento</label>
+                            <input type="text" id="doc-titulo" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-slate-800" placeholder="Ej: Manual de Convivencia">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Descripción corta</label>
+                            <input type="text" id="doc-desc" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-800" placeholder="Ej: Reglas actualizadas 2026">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Archivo (PDF, Word, Excel)</label>
+                            <input type="file" id="doc-archivo" accept=".pdf,.doc,.docx,.xls,.xlsx" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer">
+                        </div>
+                        <button onclick="guardarDocumento()" class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold p-4 rounded-xl transition-colors shadow-lg mt-2 uppercase tracking-wide text-xs">Subir Archivo</button>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7 bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col">
+                    <h4 class="font-black text-slate-800 mb-6 text-lg">Archivos en la Nube</h4>
+                    <div class="flex-1 overflow-x-auto custom-scroll border border-slate-100 rounded-2xl">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-slate-50/80 border-b border-slate-100">
+                                <tr>
+                                    <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Doc</th>
+                                    <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-documentos-admin" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-admin-formularios" class="hidden fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center backdrop-blur-md p-4 transition-all">
+        <div class="bg-slate-50 rounded-[2rem] shadow-2xl border border-slate-100 w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden fade-in">
+            <div class="px-8 py-5 border-b border-slate-200 flex justify-between items-center bg-white shrink-0">
+                <h3 class="font-extrabold text-2xl text-slate-800 tracking-tight"><i class="fas fa-clipboard-list mr-3 text-emerald-500"></i>Encuestas y Formularios</h3>
+                <button onclick="cerrarModal('modal-admin-formularios')" class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-500 transition-colors flex items-center justify-center"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            
+            <div class="p-6 md:p-8 flex-1 overflow-y-auto custom-scroll grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-5 bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm h-max">
+                    <h4 class="font-black text-slate-800 mb-6 text-lg">Vincular Formulario Externo</h4>
+                    <p class="text-xs text-slate-500 mb-4">Pega aquí el link de tu Google Forms o Microsoft Forms.</p>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Título de la Encuesta</label>
+                            <input type="text" id="form-titulo" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-sm text-slate-800" placeholder="Ej: Votación Asamblea 2026">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Descripción (Opcional)</label>
+                            <input type="text" id="form-desc" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 text-sm text-slate-800" placeholder="Ej: Participa en la elección del consejo">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Link del Formulario (URL)</label>
+                            <input type="url" id="form-url" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-sm text-emerald-700" placeholder="https://forms.gle/...">
+                        </div>
+                        <button onclick="guardarFormulario()" class="w-full bg-slate-900 hover:bg-emerald-600 text-white font-bold p-4 rounded-xl transition-colors shadow-lg mt-2 uppercase tracking-wide text-xs">Vincular Encuesta</button>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7 bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col">
+                    <h4 class="font-black text-slate-800 mb-6 text-lg">Encuestas Activas</h4>
+                    <div class="flex-1 overflow-x-auto custom-scroll border border-slate-100 rounded-2xl">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-slate-50/80 border-b border-slate-100">
+                                <tr>
+                                    <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Encuesta</th>
+                                    <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Estado</th>
+                                    <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-formularios-admin" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
