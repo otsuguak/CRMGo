@@ -20,7 +20,9 @@ export default async function handler(req, res) {
 
         if (clientes && clientes.length > 0) {
             const miCliente = clientes[0]; 
-            const idDelConjunto = (miCliente.copropiedades) ? miCliente.copropiedades.id : null;
+            const idDelConjunto = (miCliente.copropiedades && miCliente.copropiedades.length > 0) 
+                ? miCliente.copropiedades[0].id 
+                : (miCliente.copropiedad_id || null); // Por si acaso
             
             // Enviamos TODO el paquete de permisos a la página
             return res.status(200).json({

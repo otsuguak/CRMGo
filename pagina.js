@@ -26,9 +26,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const respConfig = await fetch('/api/login');
         const infoSaaS = await respConfig.json();
         
-        if (!infoSaaS.copropiedad_id) {
-            console.warn("⚠️ Dominio no registrado. El portal no cargará datos."); 
-            return;
+       if (infoSaaS.copropiedad_id) {
+             // Guardamos el ID para que cargarNoticias, cargarDocumentos, etc., lo encuentren
+            sessionStorage.setItem('copropiedad_id_publico', infoSaaS.copropiedad_id);
+            console.log("✅ ID de copropiedad cargado:", infoSaaS.copropiedad_id);
+        } else {
+            console.error("❌ No se recibió el ID de la copropiedad de la API");
         }
         
         // 4. Guardar ID en sesión
