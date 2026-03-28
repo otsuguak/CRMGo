@@ -567,5 +567,6 @@ function aplicarPermisosPublicos() {
     if (secDocumentos) secDocumentos.style.display = permisos.documentos ? 'block' : 'none';
     if (secFormularios) secFormularios.style.display = permisos.formularios ? 'block' : 'none';
     
+    
     return permisos; // Devolvemos los permisos para que el motor de arranque los use
 }
