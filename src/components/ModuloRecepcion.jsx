@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '../supabase';
 import Webcam from 'react-webcam';
 import Swal from 'sweetalert2';
-import { generarCascaronHTML } from '../utils/plantillas'; // 🔥 1. IMPORTAMOS NUESTRA FÁBRICA DE DISEÑO HTML
+import { generarCascaronHTML } from '../utils/plantillas';
 
 export default function ModuloRecepcion({ turno }) {
   const [pestana, setPestana] = useState('registro'); 
@@ -84,13 +84,19 @@ export default function ModuloRecepcion({ turno }) {
 
   const registrarIngreso = async (e) => {
     e.preventDefault();
-    if (!inmueble || !nombre || (!fotoRecortada && !fotoExistente)) {
-      return Swal.fire('Atención', 'Faltan datos o la evidencia fotográfica.', 'warning');
+    
+    // 🔥 AJUSTE: Solo exigimos foto si el tipo de registro es "Paquete"
+    const esPaquete = tipoRegistro === 'Paquete';
+    
+    if (!inmueble || !nombre || (esPaquete && !fotoRecortada && !fotoExistente)) {
+      return Swal.fire('Atención', esPaquete ? 'Faltan datos o la evidencia fotográfica del paquete.' : 'Por favor completa todos los datos obligatorios.', 'warning');
     }
+    
     setCargando(true);
     try {
       let finalFotoUrl = fotoExistente; 
-      if (fotoRecortada) {
+      
+      if (fotoRecortada && esPaquete) {
         const res = await fetch(fotoRecortada);
         const blob = await res.blob();
         const fileName = `recepcion/${idConjunto}/${Date.now()}.jpg`; 
@@ -108,7 +114,7 @@ export default function ModuloRecepcion({ turno }) {
           nombre_visitante_o_empresa: nombre.trim().toUpperCase(),
           cedula_o_guia: cedula.trim(),
           observaciones: observaciones.trim(),
-          foto_url: finalFotoUrl,
+          foto_url: esPaquete ? finalFotoUrl : null, // Si no es paquete, no mandamos foto
           estado: (tipoRegistro === 'Paquete' || tipoRegistro === 'Domicilio') ? 'En Porteria' : 'Ingresó',
           fecha_ingreso: new Date().toISOString()
         }]);
@@ -116,10 +122,9 @@ export default function ModuloRecepcion({ turno }) {
       if (dbError) throw dbError;
 
       // =========================================================================
-      // 🔥 2. SUBSISTEMA DE NOTIFICACIONES INTELIGENTES (RECEPCIÓN) 🔥
+      // 🔥 SUBSISTEMA DE NOTIFICACIONES INTELIGENTES (RECEPCIÓN)
       // =========================================================================
       try {
-        // Buscamos los perfiles de residentes asociados a este inmueble y conjunto
         const { data: residentes } = await supabase
           .from('usuarios')
           .select('id, nombre, email')
@@ -127,10 +132,8 @@ export default function ModuloRecepcion({ turno }) {
           .ilike('inmueble', inmueble.trim());
 
         if (residentes && residentes.length > 0) {
-          // Clasificamos el tipo de evento según la estructura de nuestro diccionario
           const tipoEvento = tipoRegistro === 'Paquete' ? 'PAQUETERIA' : 'VISITANTES';
 
-          // Consultamos si el administrador configuró plantillas personalizadas en el panel
           const { data: plantillasActivas } = await supabase
             .from('plantillas_notificaciones')
             .select('*')
@@ -144,7 +147,6 @@ export default function ModuloRecepcion({ turno }) {
           const fechaActual = new Date().toLocaleDateString('es-CO');
           const horaActual = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-          // Notificamos individualmente a cada miembro del apartamento
           for (const residente of residentes) {
             
             const reemplazarVariables = (texto) => {
@@ -158,9 +160,8 @@ export default function ModuloRecepcion({ turno }) {
                 .replace(/{hora}/g, horaActual);
             };
 
-            // 📦 REGLA A: SI ES UN PAQUETE DISPARAMOS MAIL + PUSH
+            // REGLA A: PAQUETE (MAIL + PUSH)
             if (tipoRegistro === 'Paquete') {
-              // 1. Envío del Correo Electrónico Corporativo
               if (residente.email) {
                 const asuntoEmail = plantillaEmail ? reemplazarVariables(plantillaEmail.asunto) : '📦 Recepción de correspondencia en portería';
                 const remitenteEmail = plantillaEmail?.nombre_remitente || 'Portería y Control de Acceso';
@@ -178,7 +179,6 @@ export default function ModuloRecepcion({ turno }) {
                 });
               }
 
-              // 2. Envío de Notificación Push
               if (residente.id) {
                 const tituloPush = plantillaPush ? reemplazarVariables(plantillaPush.asunto) : '📦 Nuevo Paquete Recibido';
                 const mensajePush = plantillaPush ? reemplazarVariables(plantillaPush.mensaje_base) : `Tienes correspondencia de ${nombre.trim().toUpperCase()} lista para reclamar.`;
@@ -188,7 +188,7 @@ export default function ModuloRecepcion({ turno }) {
                 });
               }
             } 
-            // 🚶‍♂️/🍔 REGLA B: SI ES VISITANTE O DOMICILIO SOLO SE DISPARA PUSH
+            // REGLA B: VISITANTE O DOMICILIO (SOLO PUSH)
             else if (tipoRegistro === 'Visitante' || tipoRegistro === 'Domicilio') {
               if (residente.id) {
                 const icono = tipoRegistro === 'Visitante' ? '🚶‍♂️' : '🍔';
@@ -202,7 +202,6 @@ export default function ModuloRecepcion({ turno }) {
                 });
               }
             }
-
           }
         }
       } catch (notifError) {
@@ -305,36 +304,41 @@ export default function ModuloRecepcion({ turno }) {
       {/* PESTAÑA 1: REGISTRO */}
       {pestana === 'registro' && (
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row animate-in fade-in">
-          <div className="w-full md:w-1/2 bg-slate-900 p-6 flex flex-col items-center justify-center relative">
-            <h3 className="text-white font-bold mb-4">📸 Evidencia Fotográfica</h3>
-            <div className="w-full max-w-sm aspect-video bg-black rounded-lg overflow-hidden border-4 border-slate-700 relative shadow-2xl">
-              {fotoExistente ? (
-                <img src={fotoExistente} alt="Guardada" className="w-full h-full object-cover opacity-80" />
-              ) : !fotoRecortada ? (
-                <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" videoConstraints={{ facingMode: modoCamara }} className="w-full h-full object-cover" />
-              ) : (
-                <img src={fotoRecortada} alt="Captura" className="w-full h-full object-cover" />
-              )}
+          
+          {/* 🔥 CÁMARA: Solo se renderiza si es "Paquete" 🔥 */}
+          {tipoRegistro === 'Paquete' && (
+            <div className="w-full md:w-1/2 bg-slate-900 p-6 flex flex-col items-center justify-center relative transition-all">
+              <h3 className="text-white font-bold mb-4">📸 Evidencia Fotográfica</h3>
+              <div className="w-full max-w-sm aspect-video bg-black rounded-lg overflow-hidden border-4 border-slate-700 relative shadow-2xl">
+                {fotoExistente ? (
+                  <img src={fotoExistente} alt="Guardada" className="w-full h-full object-cover opacity-80" />
+                ) : !fotoRecortada ? (
+                  <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" videoConstraints={{ facingMode: modoCamara }} className="w-full h-full object-cover" />
+                ) : (
+                  <img src={fotoRecortada} alt="Captura" className="w-full h-full object-cover" />
+                )}
+              </div>
+              <div className="mt-6 flex flex-wrap gap-4 justify-center">
+                {!fotoRecortada && !fotoExistente ? (
+                  <>
+                    <button type="button" onClick={capturarFoto} className="bg-indigo-500 text-white font-bold py-3 px-8 rounded-full shadow-lg">Capturar Foto</button>
+                    <button type="button" onClick={() => setModoCamara(modoCamara === "environment" ? "user" : "environment")} className="bg-slate-700 text-white font-bold p-3 rounded-full shadow-lg">🔄</button>
+                  </>
+                ) : (
+                  <button type="button" onClick={() => { setFotoRecortada(null); setFotoExistente(null); }} className="bg-red-500 text-white font-bold py-3 px-8 rounded-full shadow-lg">🔄 Tomar foto nueva</button>
+                )}
+              </div>
             </div>
-            <div className="mt-6 flex flex-wrap gap-4 justify-center">
-              {!fotoRecortada && !fotoExistente ? (
-                <>
-                  <button type="button" onClick={capturarFoto} className="bg-indigo-500 text-white font-bold py-3 px-8 rounded-full shadow-lg">Capturar Foto</button>
-                  <button type="button" onClick={() => setModoCamara(modoCamara === "environment" ? "user" : "environment")} className="bg-slate-700 text-white font-bold p-3 rounded-full shadow-lg">🔄</button>
-                </>
-              ) : (
-                <button type="button" onClick={() => { setFotoRecortada(null); setFotoExistente(null); }} className="bg-red-500 text-white font-bold py-3 px-8 rounded-full shadow-lg">🔄 Tomar foto nueva</button>
-              )}
-            </div>
-          </div>
+          )}
 
-          <div className="w-full md:w-1/2 p-8 lg:p-12">
+          {/* FORMULARIO: Expande al 100% de ancho si NO es paquete */}
+          <div className={`w-full ${tipoRegistro === 'Paquete' ? 'md:w-1/2' : ''} p-8 lg:p-12 transition-all`}>
             <h2 className="text-2xl font-black text-gray-800 mb-6">Registro de Portería</h2>
             <form onSubmit={registrarIngreso} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Tipo</label>
-                  <select value={tipoRegistro} onChange={(e) => { setTipoRegistro(e.target.value); setFotoExistente(null); }} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-gray-700">
+                  <select value={tipoRegistro} onChange={(e) => { setTipoRegistro(e.target.value); setFotoExistente(null); setFotoRecortada(null); }} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-gray-700">
                     <option value="Paquete">📦 Paquete</option>
                     <option value="Visitante">🚶‍♂️ Visitante Peatonal</option>
                     <option value="Domicilio">🍔 Domicilio (Rappi)</option>
@@ -347,11 +351,13 @@ export default function ModuloRecepcion({ turno }) {
               </div>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1"><span>{tipoRegistro === 'Visitante' ? 'Cédula (Con Autocompletado)' : 'N° Guía (Opcional)'}</span></label>
-                  <input type="text" value={cedula} onChange={(e) => setCedula(e.target.value)} onBlur={buscarVisitante} className={`w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 ${tipoRegistro === 'Visitante' ? 'border-indigo-400 bg-indigo-50' : 'border-gray-300'}`} placeholder={tipoRegistro === 'Visitante' ? 'Digita cédula y sal del cuadro...' : 'Ej: GUIA-987...'} required={tipoRegistro === 'Visitante'} />
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
+                    <span>{tipoRegistro === 'Visitante' ? 'Cédula (Con Autocompletado)' : (tipoRegistro === 'Domicilio' ? 'N° Pedido / Cédula' : 'N° Guía (Opcional)')}</span>
+                  </label>
+                  <input type="text" value={cedula} onChange={(e) => setCedula(e.target.value)} onBlur={buscarVisitante} className={`w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 ${tipoRegistro === 'Visitante' ? 'border-indigo-400 bg-indigo-50' : 'border-gray-300'}`} placeholder={tipoRegistro === 'Visitante' ? 'Digita cédula y sal del cuadro...' : 'Opcional...'} required={tipoRegistro === 'Visitante'} />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{tipoRegistro === 'Paquete' ? 'Empresa / Remitente' : 'Nombre Completo'}</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">{tipoRegistro === 'Paquete' ? 'Empresa / Remitente' : (tipoRegistro === 'Domicilio' ? 'Empresa (Ej: Rappi)' : 'Nombre Completo')}</label>
                   <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full p-3 border border-gray-300 rounded-xl uppercase text-sm" required />
                 </div>
               </div>
@@ -359,7 +365,9 @@ export default function ModuloRecepcion({ turno }) {
                 <label className="block text-sm font-bold text-gray-700 mb-1">Observaciones</label>
                 <textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} className="w-full p-3 border border-gray-300 rounded-xl text-sm" rows="2"></textarea>
               </div>
-              <button type="submit" disabled={cargando || (!fotoRecortada && !fotoExistente)} className={`w-full py-4 rounded-xl text-white font-black text-lg shadow-xl transition-all ${(cargando || (!fotoRecortada && !fotoExistente)) ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'}`}>
+              
+              {/* 🔥 BOTÓN: Solo se bloquea esperando foto si es Paquete 🔥 */}
+              <button type="submit" disabled={cargando || (tipoRegistro === 'Paquete' && !fotoRecortada && !fotoExistente)} className={`w-full py-4 rounded-xl text-white font-black text-lg shadow-xl transition-all ${(cargando || (tipoRegistro === 'Paquete' && !fotoRecortada && !fotoExistente)) ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'}`}>
                 {cargando ? 'Guardando...' : '✅ Guardar Registro'}
               </button>
             </form>
