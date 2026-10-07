@@ -165,7 +165,7 @@ export default function Login() {
             title: `¡Bienvenido a ${config.nombreEmpresa}!`,
             html: `
               <p style="font-size: 0.9em; margin-bottom: 15px;">Detectamos que tu correo existe en nuestra red. Para ingresar a este conjunto, indícanos tu inmueble:</p>
-              <input id="swal-inmueble" class="swal2-input" placeholder="Torre/Apto (Ej: T1-101)">
+              <input id="swal-inmueble" class="swal2-input" placeholder="Torre/Apto (Ej: 1101)">
               <input id="swal-celular" class="swal2-input" placeholder="Tu Celular">
             `,
             focusConfirm: false,
@@ -520,7 +520,7 @@ export default function Login() {
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-[10px] font-semibold texto-neon opacity-80 mb-1 block tracking-widest uppercase">Torre/Apto/Casa</label><input type="text" value={inmueble} onChange={(e) => setInmueble(e.target.value)} className="w-full input-linea" placeholder="Ej: T1-101" required /></div>
+                <div><label className="text-[10px] font-semibold texto-neon opacity-80 mb-1 block tracking-widest uppercase">Torre/Apto/Casa</label><input type="text" value={inmueble} onChange={(e) => setInmueble(e.target.value)} className="w-full input-linea" placeholder="Ej: torre/apto 1101" required /></div>
                 <div>
                   <label className="text-[10px] font-semibold texto-neon opacity-80 mb-1 block tracking-widest uppercase">Tipo Residente</label>
                   <select value={tipoResidente} onChange={(e) => setTipoResidente(e.target.value)} className="w-full select-linea cursor-pointer">
