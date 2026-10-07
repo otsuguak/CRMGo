@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import Swal from 'sweetalert2';
-import { generarCascaronHTML } from '../utils/plantillas'; // 🔥 IMPORTAMOS LA FÁBRICA
+import { generarCascaronHTML } from '../utils/plantillas';
 
 export default function ModuloParqueadero({ turno }) {
   // Pestañas de la vista del guarda
