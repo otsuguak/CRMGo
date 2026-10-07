@@ -14,6 +14,9 @@ export default function ModuloRecepcion({ turno }) {
   const [cedula, setCedula] = useState('');
   const [observaciones, setObservaciones] = useState('');
   
+  // 🔥 NUEVO: Estado para guardar la lista de apartamentos reales de los usuarios
+  const [inmueblesDisponibles, setInmueblesDisponibles] = useState([]);
+
   // Estados de la Cámara (Ingreso)
   const [fotoRecortada, setFotoRecortada] = useState(null);
   const [fotoExistente, setFotoExistente] = useState(null); 
@@ -42,6 +45,28 @@ export default function ModuloRecepcion({ turno }) {
     if (pestana === 'entregas') cargarPaquetesPendientes();
     if (pestana === 'historial') cargarPaquetesEntregados();
   }, [pestana]);
+
+  // 🔥 NUEVO: Cargar los inmuebles reales de la tabla usuarios al abrir el módulo
+  useEffect(() => {
+    const cargarInmueblesReales = async () => {
+      if (!idConjunto) return;
+      try {
+        const { data } = await supabase
+          .from('usuarios')
+          .select('inmueble')
+          .eq('copropiedad_id', idConjunto);
+
+        if (data) {
+          // Filtramos para que no haya vacíos y sacamos los valores únicos
+          const unicos = [...new Set(data.map(u => u.inmueble).filter(Boolean))].sort();
+          setInmueblesDisponibles(unicos);
+        }
+      } catch (error) {
+        console.error("Error cargando la lista de inmuebles:", error);
+      }
+    };
+    cargarInmueblesReales();
+  }, [idConjunto]);
 
   const buscarVisitante = async () => {
     if (tipoRegistro !== 'Visitante' || !cedula || cedula.length < 5) return;
@@ -209,7 +234,7 @@ export default function ModuloRecepcion({ turno }) {
       }
       // =========================================================================
 
-      Swal.fire({ title: '¡Registrado!', text: `Se registró correctamente y se notificó al inmueble.`, icon: 'success', timer: 2000 });
+      Swal.fire({ title: '¡Registrado!', text: `Se registró correctamente.`, icon: 'success', timer: 2000 });
       setInmueble(''); setNombre(''); setCedula(''); setObservaciones('');
       setFotoRecortada(null); setFotoExistente(null);
     } catch (error) {
@@ -344,10 +369,26 @@ export default function ModuloRecepcion({ turno }) {
                     <option value="Domicilio">🍔 Domicilio (Rappi)</option>
                   </select>
                 </div>
+                
+                {/* 🔥 MAGIA DEL AUTOCOMPLETADO PARA INMUEBLES 🔥 */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Apto / Casa</label>
-                  <input type="text" value={inmueble} onChange={(e) => setInmueble(e.target.value)} className="w-full p-3 border border-gray-300 rounded-xl font-bold text-center" placeholder="Ej: 11008" required />
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Apto / Casa (Autocompletado)</label>
+                  <input 
+                    type="text" 
+                    list="lista-inmuebles" 
+                    value={inmueble} 
+                    onChange={(e) => setInmueble(e.target.value)} 
+                    className="w-full p-3 border border-gray-300 rounded-xl font-bold text-center" 
+                    placeholder="Ej: Buscar o escribir..." 
+                    required 
+                  />
+                  <datalist id="lista-inmuebles">
+                    {inmueblesDisponibles.map((inm, index) => (
+                      <option key={index} value={inm} />
+                    ))}
+                  </datalist>
                 </div>
+
               </div>
               <div className="grid grid-cols-1 gap-4">
                 <div>
