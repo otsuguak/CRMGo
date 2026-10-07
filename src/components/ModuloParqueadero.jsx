@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import Swal from 'sweetalert2';
-import { generarCascaronHTML } from '../utils/plantillas'; // 🔥 IMPORTAMOS LA FÁBRICA
+import { generarCascaronHTML } from '../utils/plantillas';
 
 export default function ModuloParqueadero({ turno }) {
   // Pestañas de la vista del guarda
@@ -17,6 +17,9 @@ export default function ModuloParqueadero({ turno }) {
   const [nombre, setNombre] = useState('');
   const [cedula, setCedula] = useState('');
 
+  // 🔥 NUEVO ESTADO: Lista de apartamentos reales desde Supabase
+  const [inmueblesDisponibles, setInmueblesDisponibles] = useState([]);
+
   // Estados de la Base de Datos
   const [vehiculos, setVehiculos] = useState([]);
   const [historialCobros, setHistorialCobros] = useState([]);
@@ -26,7 +29,31 @@ export default function ModuloParqueadero({ turno }) {
 
   useEffect(() => {
     cargarDatosPrincipales();
+    cargarInmueblesReales(); // 🔥 Llamamos la función al iniciar el componente
   }, [turno]);
+
+  // 🔥 NUEVA FUNCIÓN: Trae los aptos de la tabla 'usuarios' para el datalist
+  const cargarInmueblesReales = async () => {
+    if (!turno?.copropiedad_id) return;
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('inmueble')
+        .eq('copropiedad_id', turno.copropiedad_id);
+
+      if (error) {
+        console.error("Error cargando inmuebles:", error);
+      }
+
+      if (data) {
+        // Sacamos los valores únicos, quitamos vacíos y ordenamos
+        const unicos = [...new Set(data.map(u => u.inmueble).filter(Boolean))].sort();
+        setInmueblesDisponibles(unicos);
+      }
+    } catch (error) {
+      console.error("Fallo general cargando inmuebles:", error);
+    }
+  };
 
   const cargarDatosPrincipales = async () => {
     // 1. Cargar Tarifas
@@ -73,7 +100,7 @@ export default function ModuloParqueadero({ turno }) {
         tipo_vehiculo: tipoVehiculo,
         estado: 'Dentro',
         turno_ingreso_id: turno.id,
-        inmueble: inmueble,
+        inmueble: inmueble, // Este es el que selecciona del datalist o escribe a mano
         nombre_visitante: nombre,
         cedula_visitante: cedula
       }]);
@@ -287,9 +314,24 @@ export default function ModuloParqueadero({ turno }) {
               </div>
             </div>
 
+            {/* 🔥 EL DATO MÁS IMPORTANTE: CAMPO CON AUTOCOMPLETADO 🔥 */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-1">Inmueble Destino *</label>
-              <input type="text" value={inmueble} onChange={(e) => setInmueble(e.target.value)} className="w-full p-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ej: Torre 3 - Apto 402" required />
+              <input 
+                type="text" 
+                list="opciones-inmuebles-parqueadero"
+                value={inmueble} 
+                onChange={(e) => setInmueble(e.target.value)} 
+                className="w-full p-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" 
+                placeholder="Ej: Torre/apto 1402" 
+                required 
+              />
+              {/* Esta etiqueta es la que crea la lista desplegable nativa en el navegador */}
+              <datalist id="opciones-inmuebles-parqueadero">
+                {inmueblesDisponibles.map((inm, index) => (
+                  <option key={index} value={inm} />
+                ))}
+              </datalist>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
