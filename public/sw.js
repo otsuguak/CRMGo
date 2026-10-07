@@ -28,15 +28,18 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Interceptor de peticiones
+// Interceptor de peticiones seguro
 self.addEventListener('fetch', (event) => {
+  // Ignoramos peticiones POST o las que van a Supabase para no interferir con la base de datos
   if (event.request.method !== 'GET' || event.request.url.includes('supabase.co')) {
     return; 
   }
 
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
+    fetch(event.request).catch(async () => {
+      const respuestaCache = await caches.match(event.request);
+      // 🔥 EL SALVAVIDAS: Si no hay internet y no hay caché, devolvemos un Response real y evitamos el error fatal
+      return respuestaCache || new Response('Página no disponible offline', { status: 503, statusText: 'Offline' });
     })
   );
 });
