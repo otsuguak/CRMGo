@@ -372,7 +372,7 @@ export default function ModuloRecepcion({ turno }) {
                 
                 {/* 🔥 MAGIA DEL AUTOCOMPLETADO PARA INMUEBLES 🔥 */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Apto / Casa (Autocompletado)</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Apto/Casa</label>
                   <input 
                     type="text" 
                     list="lista-inmuebles" 
